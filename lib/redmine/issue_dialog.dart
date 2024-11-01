@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hasd/app/app_service.dart';
 import 'package:hasd/common/utils.dart';
 import 'package:hasd/redmine/hasd_providers.dart';
 import 'package:hasd/redmine/redmine_dto.dart';
@@ -163,7 +164,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     required IList<Reference> issueStatutes,
     required IssueDto issue,
     required IList<Reference> users,
-    required IList<TimEntryDto> times,
+    required IList<WorkLogDto> times,
   }) {
     final attachments = issue.attachments;
     final journals = issue.journals;
@@ -324,8 +325,8 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
               final time = times[index];
 
               return ListTile(
-                title: Text('${time.spentOn} ${time.user.name}: ${formatDuration(time.hours)}'),
-                subtitle: Text('${time.activity.name} ${time.comments}'),
+                title: Text('${time.spentOn} ${time.author}: ${formatDuration(time.timeSpent)}'),
+                subtitle: Text('${time.activity} ${time.comments}'),
               );
             },
           ),

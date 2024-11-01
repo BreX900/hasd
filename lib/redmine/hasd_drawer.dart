@@ -8,6 +8,7 @@ import 'package:hasd/redmine/hasd_providers.dart';
 import 'package:hasd/redmine/redmine_dto.dart';
 import 'package:hasd/redmine/utils.dart';
 import 'package:mek/mek.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 
 final _stateProvider = FutureProvider((ref) async {
   final appSettings = await ref.watch(HasdProviders.settings.future);
@@ -28,16 +29,15 @@ class HasdDrawer extends ConsumerStatefulWidget {
 }
 
 class _HasdDrawerState extends ConsumerState<HasdDrawer> {
-  final _redmineApiKeyFieldBloc = FieldBloc(
-    initialValue: '',
-    validator: const TextValidation(minLength: 1),
+  final _redmineApiKeyFieldBloc = FormControl<String>(
+    validators: [Validators.required],
   );
 
-  final _statuesFieldBloc = FieldBloc(initialValue: IList<Reference>());
-  final _doneStatusFieldBloc = FieldBloc<Reference?>(initialValue: null);
+  final _statuesFieldBloc = FormControl<ISet<Reference>>();
+  final _doneStatusFieldBloc = FormControl<Reference?>();
 
-  final _youtrackApiTokenFieldBloc = FieldBloc(initialValue: '');
-  final _youtrackIssueIdBloc = FieldBloc(initialValue: '');
+  final _youtrackApiTokenFieldBloc = FormControl<String>();
+  final _youtrackIssueIdBloc = FormControl<String>();
 
   @override
   void initState() {
@@ -54,14 +54,17 @@ class _HasdDrawerState extends ConsumerState<HasdDrawer> {
 
     _statuesFieldBloc.updateValue(appSettings.issueStatutes.map((issueStatusId) {
       return issueStatutes.firstWhere((e) => e.id == issueStatusId);
-    }).toIList());
-    _statuesFieldBloc.stream.map((state) => state.value).distinct().listen((values) async {
+    }).toISet());
+    _statuesFieldBloc.valueChanges
+        .map((e) => e ?? const ISet<Reference>.empty())
+        .distinct()
+        .listen((values) async {
       await HasdProviders.settingsBin.update(
           (data) => data.change((b) => b..issueStatutes = values.map((e) => e.id).toIList()));
     });
     _doneStatusFieldBloc
         .updateValue(issueStatutes.firstWhereOrNull((e) => e.id == appSettings.doneIssueStatus));
-    _doneStatusFieldBloc.stream.map((state) => state.value).distinct().listen((value) async {
+    _doneStatusFieldBloc.valueChanges.distinct().listen((value) async {
       await HasdProviders.settingsBin
           .update((data) => data.change((b) => b..doneIssueStatus = value?.id));
     });
@@ -78,9 +81,8 @@ class _HasdDrawerState extends ConsumerState<HasdDrawer> {
         children: [
           const SizedBox(height: 32.0),
           Text('Easy Redmine', style: textTheme.headlineLarge),
-          FieldText(
-            fieldBloc: _redmineApiKeyFieldBloc,
-            converter: FieldConvert.text,
+          TypedReactiveTextField(
+            formControl: _redmineApiKeyFieldBloc,
             type: const TextFieldType.secret(),
             decoration: InputDecoration(
               labelText: 'Api Key',
@@ -88,30 +90,31 @@ class _HasdDrawerState extends ConsumerState<HasdDrawer> {
                 toggleableObscureText: true,
                 onSubmit: () async {
                   await HasdProviders.settingsBin.update((data) {
-                    return data.change((c) => c..apiKey = _redmineApiKeyFieldBloc.state.value);
+                    return data.change((c) => c..apiKey = _redmineApiKeyFieldBloc.value!);
                   });
-                  _redmineApiKeyFieldBloc.markAsUpdated();
+                  _redmineApiKeyFieldBloc.markAsPristine();
+                  _redmineApiKeyFieldBloc.markAsUntouched();
                 },
               ),
             ),
           ),
-          FieldMultiDropdown(
-            fieldBloc: _statuesFieldBloc,
+          ReactivePopupMenuButton(
+            formControl: _statuesFieldBloc,
             decoration: const InputDecoration(labelText: 'Statues'),
-            itemBuilder: (context, selection) => issueStatutes.map((value) {
+            itemBuilder: (field) => issueStatutes.map((value) {
               return CheckedPopupMenuItem(
                 value: value,
-                checked: selection.contains(value),
+                checked: field.value?.contains(value) ?? false,
                 child: Text(value.name),
               );
             }).toList(),
-            builder: (context, selection) {
-              if (selection.isEmpty) return const Text('Please select a issue statues');
-              return Text(selection.map((e) => e.name).join(', '));
+            builder: (field) {
+              if (field.value?.isEmpty ?? true) return const Text('Please select a issue statues');
+              return Text(field.value?.map((e) => e.name).join(', ') ?? '');
             },
           ),
-          FieldDropdown<Reference?>(
-            fieldBloc: _doneStatusFieldBloc,
+          ReactiveDropdownField<Reference?>(
+            formControl: _doneStatusFieldBloc,
             decoration: const InputDecoration(
               labelText: 'Status to mark issue with 100% progress.',
             ),
@@ -127,9 +130,8 @@ class _HasdDrawerState extends ConsumerState<HasdDrawer> {
           ),
           const SizedBox(height: 32.0),
           Text('Youtrack', style: textTheme.headlineLarge),
-          FieldText(
-            fieldBloc: _youtrackApiTokenFieldBloc,
-            converter: FieldConvert.text,
+          TypedReactiveTextField(
+            formControl: _youtrackApiTokenFieldBloc,
             type: const TextFieldType.secret(),
             decoration: InputDecoration(
               labelText: 'Api Token',
@@ -137,26 +139,26 @@ class _HasdDrawerState extends ConsumerState<HasdDrawer> {
                 toggleableObscureText: true,
                 onSubmit: () async {
                   await HasdProviders.settingsBin.update((data) {
-                    return data
-                        .change((c) => c.youtrackApiKey = _youtrackApiTokenFieldBloc.state.value);
+                    return data.change((c) => c.youtrackApiKey = _youtrackApiTokenFieldBloc.value!);
                   });
-                  _youtrackApiTokenFieldBloc.markAsUpdated();
+                  _youtrackApiTokenFieldBloc.markAsPristine();
+                  _youtrackApiTokenFieldBloc.markAsUntouched();
                 },
               ),
             ),
           ),
-          FieldText(
-            fieldBloc: _youtrackIssueIdBloc,
-            converter: FieldConvert.text,
+          TypedReactiveTextField(
+            formControl: _youtrackIssueIdBloc,
             readOnly: true,
             decoration: InputDecoration(
               labelText: 'Issue for spent time',
               suffixIcon: EditFieldButton(
                 onSubmit: () async {
                   await HasdProviders.settingsBin.update((data) {
-                    return data.change((c) => c.youtrackIssueId = _youtrackIssueIdBloc.state.value);
+                    return data.change((c) => c.youtrackIssueId = _youtrackIssueIdBloc.value!);
                   });
-                  _youtrackIssueIdBloc.markAsUpdated();
+                  _youtrackIssueIdBloc.markAsPristine();
+                  _youtrackIssueIdBloc.markAsUntouched();
                 },
               ),
             ),

@@ -1,10 +1,11 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hasd/app/app_service.dart';
 import 'package:hasd/redmine/redmine_dto.dart';
 import 'package:hasd/redmine/redmine_repository.dart';
 import 'package:hasd/you_track/youtrack_dto.dart';
 import 'package:hasd/you_track/youtrack_repository.dart';
-import 'package:mek/mek.dart';
+import 'package:mekart/mekart.dart';
 
 abstract final class HasdProviders {
   static final settingsBin = Bin<AppSettings>(
@@ -13,7 +14,7 @@ abstract final class HasdProviders {
     fallbackData: const AppSettings(),
   );
 
-  static final settings = StreamProvider((ref) => settingsBin.stream.map((e) => e!));
+  static final settings = StreamProvider((ref) => settingsBin.stream.map((e) => e));
 
   static final project = FutureProvider.family((ref, int id) async {
     return await RedmineRepository.instance.fetchProject(id);
@@ -62,16 +63,11 @@ abstract final class HasdProviders {
   static final times =
       FutureProvider.family((ref, ({Date? spentFrom, Date? spentTo, int? issueId}) _) async {
     final (:spentFrom, :spentTo, :issueId) = _;
-    return fetchAll((limit, offset) async {
-      return await RedmineRepository.instance.fetchTimeEntries(
-        limit: limit,
-        offset: offset,
-        userId: -1,
-        spentFrom: spentFrom,
-        spentTo: spentTo,
-        issueId: issueId,
-      );
-    });
+    return await AppService.instance.fetchWorkLogs(
+      spentFrom: spentFrom,
+      spentTo: spentTo,
+      issueId: issueId,
+    );
   });
 
   static Future<void> updateIssue(

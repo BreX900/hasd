@@ -2,7 +2,7 @@
 
 // ignore_for_file: cast_nullable_to_non_nullable, avoid_annotating_with_dynamic
 
-part of 'redmine_dto.dart';
+part of '../../redmine/redmine_dto.dart';
 
 // **************************************************************************
 // DataClassGenerator
@@ -637,45 +637,92 @@ class _IssueSettingsChanges {
 // JsonSerializableGenerator
 // **************************************************************************
 
-IssueDto _$IssueDtoFromJson(Map<String, dynamic> json) => IssueDto(
-      id: json['id'] as int,
-      project: Reference.fromJson(json['project'] as Map<String, dynamic>),
-      tracker: Reference.fromJson(json['tracker'] as Map<String, dynamic>),
-      status: Reference.fromJson(json['status'] as Map<String, dynamic>),
-      priority: Reference.fromJson(json['priority'] as Map<String, dynamic>),
-      author: Reference.fromJson(json['author'] as Map<String, dynamic>),
-      assignedTo:
-          Reference.fromJson(json['assigned_to'] as Map<String, dynamic>),
-      fixedVersion: json['fixed_version'] == null
-          ? null
-          : Reference.fromJson(json['fixed_version'] as Map<String, dynamic>),
-      parentId: IssueDto._readParent(json, 'parent') as int?,
-      subject: json['subject'] as String,
-      description: json['description'] as String,
-      startDate: json['start_date'] as String,
-      dueDate: json['due_date'] as String?,
-      doneRatio: json['done_ratio'] as int,
-      isPrivate: json['is_private'] as bool,
-      isFavorited: json['is_favorited'] as bool,
-      estimatedHours: _$JsonConverterFromJson<double, Duration>(
-          json['estimated_hours'], const HoursConverter().fromJson),
-      createdOn: DateTime.parse(json['created_on'] as String),
-      updatedOn: DateTime.parse(json['updated_on'] as String),
-      closedOn: json['closed_on'] == null
-          ? null
-          : DateTime.parse(json['closed_on'] as String),
-      attachments: json['attachments'] == null
-          ? const IList.empty()
-          : IList<AttachmentDto>.fromJson(json['attachments'],
-              (value) => AttachmentDto.fromJson(value as Map<String, dynamic>)),
-      journals: json['journals'] == null
-          ? const IList.empty()
-          : IList<JournalDto>.fromJson(json['journals'],
-              (value) => JournalDto.fromJson(value as Map<String, dynamic>)),
-      children: json['children'] == null
-          ? const IList.empty()
-          : IList<IssueChildDto>.fromJson(json['children'],
-              (value) => IssueChildDto.fromJson(value as Map<String, dynamic>)),
+IssueDto _$IssueDtoFromJson(Map<String, dynamic> json) => $checkedCreate(
+      'IssueDto',
+      json,
+      ($checkedConvert) {
+        final val = IssueDto(
+          id: $checkedConvert('id', (v) => (v as num).toInt()),
+          project: $checkedConvert(
+              'project', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          tracker: $checkedConvert(
+              'tracker', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          status: $checkedConvert(
+              'status', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          priority: $checkedConvert(
+              'priority', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          author: $checkedConvert(
+              'author', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          assignedTo: $checkedConvert('assigned_to',
+              (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          fixedVersion: $checkedConvert(
+              'fixed_version',
+              (v) => v == null
+                  ? null
+                  : Reference.fromJson(v as Map<String, dynamic>)),
+          parentId: $checkedConvert(
+            'parent',
+            (v) => (v as num?)?.toInt(),
+            readValue: IssueDto._readParent,
+          ),
+          subject: $checkedConvert('subject', (v) => v as String),
+          description: $checkedConvert('description', (v) => v as String),
+          startDate: $checkedConvert('start_date', (v) => v as String),
+          dueDate: $checkedConvert('due_date', (v) => v as String?),
+          doneRatio: $checkedConvert('done_ratio', (v) => (v as num).toInt()),
+          isPrivate: $checkedConvert('is_private', (v) => v as bool),
+          isFavorited: $checkedConvert('is_favorited', (v) => v as bool),
+          estimatedHours: $checkedConvert(
+              'estimated_hours',
+              (v) => _$JsonConverterFromJson<double, Duration>(
+                  v, const HoursConverter().fromJson)),
+          createdOn:
+              $checkedConvert('created_on', (v) => DateTime.parse(v as String)),
+          updatedOn:
+              $checkedConvert('updated_on', (v) => DateTime.parse(v as String)),
+          closedOn: $checkedConvert('closed_on',
+              (v) => v == null ? null : DateTime.parse(v as String)),
+          attachments: $checkedConvert(
+              'attachments',
+              (v) => v == null
+                  ? const IList.empty()
+                  : IList<AttachmentDto>.fromJson(
+                      v,
+                      (value) => AttachmentDto.fromJson(
+                          value as Map<String, dynamic>))),
+          journals: $checkedConvert(
+              'journals',
+              (v) => v == null
+                  ? const IList.empty()
+                  : IList<JournalDto>.fromJson(
+                      v,
+                      (value) =>
+                          JournalDto.fromJson(value as Map<String, dynamic>))),
+          children: $checkedConvert(
+              'children',
+              (v) => v == null
+                  ? const IList.empty()
+                  : IList<IssueChildDto>.fromJson(
+                      v,
+                      (value) => IssueChildDto.fromJson(
+                          value as Map<String, dynamic>))),
+        );
+        return val;
+      },
+      fieldKeyMap: const {
+        'assignedTo': 'assigned_to',
+        'fixedVersion': 'fixed_version',
+        'parentId': 'parent',
+        'startDate': 'start_date',
+        'dueDate': 'due_date',
+        'doneRatio': 'done_ratio',
+        'isPrivate': 'is_private',
+        'isFavorited': 'is_favorited',
+        'estimatedHours': 'estimated_hours',
+        'createdOn': 'created_on',
+        'updatedOn': 'updated_on',
+        'closedOn': 'closed_on'
+      },
     );
 
 Value? _$JsonConverterFromJson<Json, Value>(
@@ -685,57 +732,124 @@ Value? _$JsonConverterFromJson<Json, Value>(
     json == null ? null : fromJson(json as Json);
 
 IssueStatusDto _$IssueStatusDtoFromJson(Map<String, dynamic> json) =>
-    IssueStatusDto(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      isClosed: json['is_closed'] as bool,
+    $checkedCreate(
+      'IssueStatusDto',
+      json,
+      ($checkedConvert) {
+        final val = IssueStatusDto(
+          id: $checkedConvert('id', (v) => (v as num).toInt()),
+          name: $checkedConvert('name', (v) => v as String),
+          isClosed: $checkedConvert('is_closed', (v) => v as bool),
+        );
+        return val;
+      },
+      fieldKeyMap: const {'isClosed': 'is_closed'},
     );
 
-Reference _$ReferenceFromJson(Map<String, dynamic> json) => Reference(
-      id: json['id'] as int,
-      name: json['name'] as String,
+Reference _$ReferenceFromJson(Map<String, dynamic> json) => $checkedCreate(
+      'Reference',
+      json,
+      ($checkedConvert) {
+        final val = Reference(
+          id: $checkedConvert('id', (v) => (v as num).toInt()),
+          name: $checkedConvert('name', (v) => v as String),
+        );
+        return val;
+      },
     );
 
 AttachmentDto _$AttachmentDtoFromJson(Map<String, dynamic> json) =>
-    AttachmentDto(
-      id: json['id'] as int,
-      filename: json['filename'] as String,
-      filesize: json['filesize'] as int,
-      contentType: json['content_type'] as String,
-      description: json['description'] as String?,
-      contentUrl: json['content_url'] as String,
-      hrefUrl: json['href_url'] as String,
-      author: Reference.fromJson(json['author'] as Map<String, dynamic>),
-      createdOn: DateTime.parse(json['created_on'] as String),
+    $checkedCreate(
+      'AttachmentDto',
+      json,
+      ($checkedConvert) {
+        final val = AttachmentDto(
+          id: $checkedConvert('id', (v) => (v as num).toInt()),
+          filename: $checkedConvert('filename', (v) => v as String),
+          filesize: $checkedConvert('filesize', (v) => (v as num).toInt()),
+          contentType: $checkedConvert('content_type', (v) => v as String),
+          description: $checkedConvert('description', (v) => v as String?),
+          contentUrl: $checkedConvert('content_url', (v) => v as String),
+          hrefUrl: $checkedConvert('href_url', (v) => v as String),
+          author: $checkedConvert(
+              'author', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          createdOn:
+              $checkedConvert('created_on', (v) => DateTime.parse(v as String)),
+        );
+        return val;
+      },
+      fieldKeyMap: const {
+        'contentType': 'content_type',
+        'contentUrl': 'content_url',
+        'hrefUrl': 'href_url',
+        'createdOn': 'created_on'
+      },
     );
 
-JournalDto _$JournalDtoFromJson(Map<String, dynamic> json) => JournalDto(
-      id: json['id'] as int,
-      user: Reference.fromJson(json['user'] as Map<String, dynamic>),
-      notes: json['notes'] as String,
-      createdOn: DateTime.parse(json['created_on'] as String),
-      privateNotes: json['private_notes'] as bool,
-      details: IList<JournalDetailDto>.fromJson(json['details'],
-          (value) => JournalDetailDto.fromJson(value as Map<String, dynamic>)),
+JournalDto _$JournalDtoFromJson(Map<String, dynamic> json) => $checkedCreate(
+      'JournalDto',
+      json,
+      ($checkedConvert) {
+        final val = JournalDto(
+          id: $checkedConvert('id', (v) => (v as num).toInt()),
+          user: $checkedConvert(
+              'user', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          notes: $checkedConvert('notes', (v) => v as String),
+          createdOn:
+              $checkedConvert('created_on', (v) => DateTime.parse(v as String)),
+          privateNotes: $checkedConvert('private_notes', (v) => v as bool),
+          details: $checkedConvert(
+              'details',
+              (v) => IList<JournalDetailDto>.fromJson(
+                  v,
+                  (value) => JournalDetailDto.fromJson(
+                      value as Map<String, dynamic>))),
+        );
+        return val;
+      },
+      fieldKeyMap: const {
+        'createdOn': 'created_on',
+        'privateNotes': 'private_notes'
+      },
     );
 
 JournalDetailDto _$JournalDetailDtoFromJson(Map<String, dynamic> json) =>
-    JournalDetailDto(
-      property: json['property'] as String,
-      name: json['name'] as String,
-      oldValue: json['old_value'] as String?,
-      newValue: json['new_value'] as String?,
+    $checkedCreate(
+      'JournalDetailDto',
+      json,
+      ($checkedConvert) {
+        final val = JournalDetailDto(
+          property: $checkedConvert('property', (v) => v as String),
+          name: $checkedConvert('name', (v) => v as String),
+          oldValue: $checkedConvert('old_value', (v) => v as String?),
+          newValue: $checkedConvert('new_value', (v) => v as String?),
+        );
+        return val;
+      },
+      fieldKeyMap: const {'oldValue': 'old_value', 'newValue': 'new_value'},
     );
 
 IssueChildDto _$IssueChildDtoFromJson(Map<String, dynamic> json) =>
-    IssueChildDto(
-      id: json['id'] as int,
-      tracker: Reference.fromJson(json['tracker'] as Map<String, dynamic>),
-      subject: json['subject'] as String,
-      children: json['children'] == null
-          ? const IList.empty()
-          : IList<IssueChildDto>.fromJson(json['children'],
-              (value) => IssueChildDto.fromJson(value as Map<String, dynamic>)),
+    $checkedCreate(
+      'IssueChildDto',
+      json,
+      ($checkedConvert) {
+        final val = IssueChildDto(
+          id: $checkedConvert('id', (v) => (v as num).toInt()),
+          tracker: $checkedConvert(
+              'tracker', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          subject: $checkedConvert('subject', (v) => v as String),
+          children: $checkedConvert(
+              'children',
+              (v) => v == null
+                  ? const IList.empty()
+                  : IList<IssueChildDto>.fromJson(
+                      v,
+                      (value) => IssueChildDto.fromJson(
+                          value as Map<String, dynamic>))),
+        );
+        return val;
+      },
     );
 
 Map<String, dynamic> _$IssueUpdateDtoToJson(IssueUpdateDto instance) {
@@ -768,67 +882,142 @@ Map<String, dynamic> _$IssueUpdateDtoToJson(IssueUpdateDto instance) {
   return val;
 }
 
-TimEntryDto _$TimEntryDtoFromJson(Map<String, dynamic> json) => TimEntryDto(
-      id: json['id'] as int,
-      project: Reference.fromJson(json['project'] as Map<String, dynamic>),
-      user: Reference.fromJson(json['user'] as Map<String, dynamic>),
-      activity: Reference.fromJson(json['activity'] as Map<String, dynamic>),
-      hours: const HoursConverter().fromJson(json['hours'] as double),
-      comments: json['comments'] as String? ?? '',
-      spentOn: const DateConverter().fromJson(json['spent_on'] as String),
-      easyRangeFrom: json['easy_range_from'] as String?,
-      easyRangeTo: json['easy_range_to'] as String?,
-      easyExternalId: json['easy_external_id'] as int?,
-      entityId: json['entity_id'] as int,
-      entityType: json['entity_type'] as String,
-      createdOn: DateTime.parse(json['created_on'] as String),
-      updatedOn: DateTime.parse(json['updated_on'] as String),
+TimEntryDto _$TimEntryDtoFromJson(Map<String, dynamic> json) => $checkedCreate(
+      'TimEntryDto',
+      json,
+      ($checkedConvert) {
+        final val = TimEntryDto(
+          id: $checkedConvert('id', (v) => (v as num).toInt()),
+          project: $checkedConvert(
+              'project', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          user: $checkedConvert(
+              'user', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          activity: $checkedConvert(
+              'activity', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          hours: $checkedConvert('hours',
+              (v) => const HoursConverter().fromJson((v as num).toDouble())),
+          comments: $checkedConvert('comments', (v) => v as String? ?? ''),
+          spentOn: $checkedConvert(
+              'spent_on', (v) => const DateConverter().fromJson(v as String)),
+          easyRangeFrom:
+              $checkedConvert('easy_range_from', (v) => v as String?),
+          easyRangeTo: $checkedConvert('easy_range_to', (v) => v as String?),
+          easyExternalId:
+              $checkedConvert('easy_external_id', (v) => (v as num?)?.toInt()),
+          entityId: $checkedConvert('entity_id', (v) => (v as num).toInt()),
+          entityType: $checkedConvert('entity_type', (v) => v as String),
+          createdOn:
+              $checkedConvert('created_on', (v) => DateTime.parse(v as String)),
+          updatedOn:
+              $checkedConvert('updated_on', (v) => DateTime.parse(v as String)),
+        );
+        return val;
+      },
+      fieldKeyMap: const {
+        'spentOn': 'spent_on',
+        'easyRangeFrom': 'easy_range_from',
+        'easyRangeTo': 'easy_range_to',
+        'easyExternalId': 'easy_external_id',
+        'entityId': 'entity_id',
+        'entityType': 'entity_type',
+        'createdOn': 'created_on',
+        'updatedOn': 'updated_on'
+      },
     );
 
-ProjectDto _$ProjectDtoFromJson(Map<String, dynamic> json) => ProjectDto(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      homepage: json['homepage'] as String,
-      description: json['description'] as String,
-      parent: json['parent'] == null
-          ? null
-          : Reference.fromJson(json['parent'] as Map<String, dynamic>),
-      author: Reference.fromJson(json['author'] as Map<String, dynamic>),
-      status: json['status'] as int,
-      isPublic: json['is_public'] as bool,
-      createdOn: DateTime.parse(json['created_on'] as String),
-      updatedOn: DateTime.parse(json['updated_on'] as String),
-      startDate: json['start_date'] as String,
-      dueDate: json['due_date'] as String?,
-      timeEntryActivities: IList<Reference>.fromJson(
-          json['time_entry_activities'],
-          (value) => Reference.fromJson(value as Map<String, dynamic>)),
+ProjectDto _$ProjectDtoFromJson(Map<String, dynamic> json) => $checkedCreate(
+      'ProjectDto',
+      json,
+      ($checkedConvert) {
+        final val = ProjectDto(
+          id: $checkedConvert('id', (v) => (v as num).toInt()),
+          name: $checkedConvert('name', (v) => v as String),
+          homepage: $checkedConvert('homepage', (v) => v as String),
+          description: $checkedConvert('description', (v) => v as String),
+          parent: $checkedConvert(
+              'parent',
+              (v) => v == null
+                  ? null
+                  : Reference.fromJson(v as Map<String, dynamic>)),
+          author: $checkedConvert(
+              'author', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          status: $checkedConvert('status', (v) => (v as num).toInt()),
+          isPublic: $checkedConvert('is_public', (v) => v as bool),
+          createdOn:
+              $checkedConvert('created_on', (v) => DateTime.parse(v as String)),
+          updatedOn:
+              $checkedConvert('updated_on', (v) => DateTime.parse(v as String)),
+          startDate: $checkedConvert('start_date', (v) => v as String),
+          dueDate: $checkedConvert('due_date', (v) => v as String?),
+          timeEntryActivities: $checkedConvert(
+              'time_entry_activities',
+              (v) => IList<Reference>.fromJson(
+                  v,
+                  (value) =>
+                      Reference.fromJson(value as Map<String, dynamic>))),
+        );
+        return val;
+      },
+      fieldKeyMap: const {
+        'isPublic': 'is_public',
+        'createdOn': 'created_on',
+        'updatedOn': 'updated_on',
+        'startDate': 'start_date',
+        'dueDate': 'due_date',
+        'timeEntryActivities': 'time_entry_activities'
+      },
     );
 
 MembershipDto _$MembershipDtoFromJson(Map<String, dynamic> json) =>
-    MembershipDto(
-      id: json['id'] as int,
-      project: Reference.fromJson(json['project'] as Map<String, dynamic>),
-      user: json['user'] == null
-          ? null
-          : Reference.fromJson(json['user'] as Map<String, dynamic>),
+    $checkedCreate(
+      'MembershipDto',
+      json,
+      ($checkedConvert) {
+        final val = MembershipDto(
+          id: $checkedConvert('id', (v) => (v as num).toInt()),
+          project: $checkedConvert(
+              'project', (v) => Reference.fromJson(v as Map<String, dynamic>)),
+          user: $checkedConvert(
+              'user',
+              (v) => v == null
+                  ? null
+                  : Reference.fromJson(v as Map<String, dynamic>)),
+        );
+        return val;
+      },
     );
 
-AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
-      apiKey: json['apiKey'] as String? ?? '',
-      issueStatutes: json['issueStatutes'] == null
-          ? const IListConst([])
-          : IList<int>.fromJson(json['issueStatutes'], (value) => value as int),
-      doneIssueStatus: json['doneIssueStatus'] as int?,
-      defaultTimeActivity: json['defaultTimeActivity'] as int?,
-      issues: json['issues'] == null
-          ? const IMapConst({})
-          : IMap<String, IssueSettings>.fromJson(
-              json['issues'] as Map<String, dynamic>,
-              (value) => value as String,
-              (value) => IssueSettings.fromJson(value as Map<String, dynamic>)),
-      youtrackApiKey: json['youtrackApiKey'] as String? ?? '',
-      youtrackIssueId: json['youtrackIssueId'] as String? ?? '',
+AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => $checkedCreate(
+      'AppSettings',
+      json,
+      ($checkedConvert) {
+        final val = AppSettings(
+          apiKey: $checkedConvert('apiKey', (v) => v as String? ?? ''),
+          issueStatutes: $checkedConvert(
+              'issueStatutes',
+              (v) => v == null
+                  ? const IListConst([])
+                  : IList<int>.fromJson(v, (value) => (value as num).toInt())),
+          doneIssueStatus:
+              $checkedConvert('doneIssueStatus', (v) => (v as num?)?.toInt()),
+          defaultTimeActivity: $checkedConvert(
+              'defaultTimeActivity', (v) => (v as num?)?.toInt()),
+          issues: $checkedConvert(
+              'issues',
+              (v) => v == null
+                  ? const IMapConst({})
+                  : IMap<String, IssueSettings>.fromJson(
+                      v as Map<String, dynamic>,
+                      (value) => value as String,
+                      (value) => IssueSettings.fromJson(
+                          value as Map<String, dynamic>))),
+          youtrackApiKey:
+              $checkedConvert('youtrackApiKey', (v) => v as String? ?? ''),
+          youtrackIssueId:
+              $checkedConvert('youtrackIssueId', (v) => v as String? ?? ''),
+        );
+        return val;
+      },
     );
 
 Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
@@ -848,10 +1037,18 @@ Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
     };
 
 IssueSettings _$IssueSettingsFromJson(Map<String, dynamic> json) =>
-    IssueSettings(
-      info: json['comment'] as String? ?? '',
-      docsIn: json['docsIn'] as int?,
-      blockedBy: json['blockedBy'] as int?,
+    $checkedCreate(
+      'IssueSettings',
+      json,
+      ($checkedConvert) {
+        final val = IssueSettings(
+          info: $checkedConvert('comment', (v) => v as String? ?? ''),
+          docsIn: $checkedConvert('docsIn', (v) => (v as num?)?.toInt()),
+          blockedBy: $checkedConvert('blockedBy', (v) => (v as num?)?.toInt()),
+        );
+        return val;
+      },
+      fieldKeyMap: const {'info': 'comment'},
     );
 
 Map<String, dynamic> _$IssueSettingsToJson(IssueSettings instance) =>

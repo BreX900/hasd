@@ -1,14 +1,15 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hasd/app/app_service.dart';
 import 'package:hasd/redmine/hasd_app.dart';
 import 'package:hasd/redmine/hasd_drawer.dart';
 import 'package:hasd/redmine/hasd_providers.dart';
 import 'package:hasd/redmine/issue_dialog.dart';
-import 'package:hasd/redmine/redmine_dto.dart';
 import 'package:hasd/redmine/utils.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
+import 'package:mekart/mekart.dart';
 import 'package:recase/recase.dart';
 
 final _stateProvider = FutureProvider.family((ref, (Date, Date) _) async {
@@ -46,7 +47,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
     super.dispose();
   }
 
-  Widget _buildBody({required IList<TimEntryDto> monthTimes}) {
+  Widget _buildBody({required IList<WorkLogDto> monthTimes}) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
@@ -57,19 +58,19 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
       controller: _calendarController,
       hiddenWeekdays: const [DateTime.saturday, DateTime.sunday],
       cellBuilder: (context, data, dateTime) {
-        dateTime = dateTime.date;
-        final times = monthTimes.where((e) => e.spentOn == dateTime);
-        final totalTime = times.fold(Duration.zero, (total, e) => total + e.hours);
+        dateTime = dateTime.withoutTime();
+        final times = monthTimes.where((e) => e.spentOn == dateTime.asDate());
+        final totalTime = times.fold(Duration.zero, (total, e) => total + e.timeSpent);
 
         final entries = times.map((time) {
           return FlatListTile(
             dense: true,
             onTap: () async => showDialog(
               context: context,
-              builder: (context) => IssueDialog(issueId: time.entityId),
+              builder: (context) => IssueDialog(issueId: time.issueId),
             ),
-            title: Text('${formatDuration(time.hours)} ${time.activity.name}'),
-            subtitle: Text('#${time.entityId}'),
+            title: Text('${formatDuration(time.timeSpent)} ${time.activity}'),
+            subtitle: Text('#${time.issueId}'),
           );
         }).toList();
 
@@ -96,7 +97,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
   @override
   Widget build(BuildContext context) {
     final range = ref.watch(_calendarController.select((value) {
-      return (value.initialMonthDay.toDate(), value.lastMonthDay.toDate());
+      return (value.initialMonthDay.asDate(), value.lastMonthDay.asDate());
     }));
     final state = ref.watch(_stateProvider(range));
 
@@ -105,7 +106,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
 
     final t = MaterialLocalizations.of(context);
 
-    final now = DateTime.timestamp().date;
+    final now = Date.timestamp();
 
     return Scaffold(
       appBar: AppBar(
@@ -122,7 +123,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
         children: [
           MonthCalendarHeader(
             controller: _calendarController,
-            lastDate: now.copyWith(month: now.month + 1, day: -1),
+            lastDate: now.copyWith(month: now.month + 1, day: -1).asDateTime(),
             headerBuilder: (context, date) {
               return Text(t.formatMonthYear(date).sentenceCase, style: textTheme.headlineSmall);
             },
@@ -255,7 +256,7 @@ class MonthCalendarValue {
   MonthCalendarValue({
     DateTime? selectedDay,
     this.hiddenWeekdays = const <int>[],
-  }) : selectedDay = selectedDay ?? DateTime.now().date;
+  }) : selectedDay = selectedDay ?? DateTime.now().withoutTime();
 
   bool isInMonth(DateTime day) {
     if (day == initialMonthDay || day == lastMonthDay) return true;

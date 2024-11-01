@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:mek/mek.dart';
+import 'package:mekart/mekart.dart';
 
 class RedmineSerializable extends JsonSerializable {
   const RedmineSerializable({

@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'youtrack_dto.g.dart';
+part '../generated/you_track/youtrack_dto.g.dart';
 
 @YoutrackSerializable(createToJson: true)
 class IssueWorkItemDto {

@@ -2,7 +2,7 @@
 
 // ignore_for_file: cast_nullable_to_non_nullable, avoid_annotating_with_dynamic
 
-part of 'youtrack_dto.dart';
+part of '../../you_track/youtrack_dto.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator

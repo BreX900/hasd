@@ -11,7 +11,6 @@ import 'package:hasd/redmine/redmine_dto.dart';
 import 'package:hasd/redmine/utils.dart';
 import 'package:mek/mek.dart';
 import 'package:multi_split_view/multi_split_view.dart';
-import 'package:pure_extensions/pure_extensions.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 final _stateProvider = FutureProvider((ref) async {
@@ -237,7 +236,10 @@ class IssueInfoBar extends ConsumerWidget {
         if (issue.closedOn != null)
           Tooltip(message: 'Closed on', child: Text(formatDateTime(issue.closedOn!))),
         if (issue.dueDate != null) Tooltip(message: 'Due date', child: Text(issue.dueDate!)),
-      ].joinElement(const Text(' - ')).toList(),
+      ].expandIndexed((index, child) sync* {
+        if (index != 0) yield const Text(' - ');
+        yield child;
+      }).toList(),
     );
   }
 }

@@ -2,10 +2,10 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/common/env.dart';
 import 'package:hasd/redmine/redmine_serializable.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:mek/mek.dart';
 import 'package:mek_data_class/mek_data_class.dart';
+import 'package:mekart/mekart.dart';
 
-part 'redmine_dto.g.dart';
+part '../generated/redmine/redmine_dto.g.dart';
 
 @DataClass()
 @RedmineSerializable(createFactory: true)
@@ -381,7 +381,7 @@ class MembershipDto with _$MembershipDto {
 // Extra
 
 @DataClass(changeable: true)
-@JsonSerializable()
+@JsonSerializable(createFactory: true, createToJson: true)
 class AppSettings with _$AppSettings {
   final String apiKey;
   final IList<int> issueStatutes;
@@ -407,7 +407,7 @@ class AppSettings with _$AppSettings {
 }
 
 @DataClass(changeable: true)
-@JsonSerializable()
+@JsonSerializable(createFactory: true, createToJson: true)
 class IssueSettings with _$IssueSettings {
   @JsonKey(name: 'comment')
   final String info;

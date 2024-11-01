@@ -4,7 +4,7 @@ import 'package:hasd/redmine/redmine_dto.dart';
 import 'package:hasd/redmine/redmine_repository.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
-import 'package:pure_extensions/pure_extensions.dart';
+import 'package:mekart/mekart.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const List<String> _wordMimeTypes = [
@@ -52,9 +52,9 @@ Future<void> launchFileWebView(BuildContext context, AttachmentDto attachment) a
 
 String formatDuration(Duration source) {
   final text = '${source.hours}h ${source.minutes}m';
-  if (source.days == 0) return text;
+  if (source.inDays == 0) return text;
 
-  return '${source.days}d $text';
+  return '${source.inDays}d $text';
 }
 
 String formatDateTime(DateTime source) => DateFormat('yyyy-MM-dd hh:mm').format(source);

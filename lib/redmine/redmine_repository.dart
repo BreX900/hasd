@@ -3,7 +3,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/redmine/redmine_dto.dart';
 import 'package:hasd/redmine/redmine_serializable.dart';
 import 'package:intl/intl.dart';
-import 'package:mek/mek.dart';
+import 'package:mekart/mekart.dart';
 
 class RedmineRepository {
   static late RedmineRepository instance;

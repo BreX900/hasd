@@ -31,8 +31,8 @@ class HasdApp extends ConsumerStatefulWidget {
 }
 
 class HasdAppState extends ConsumerState<HasdApp> with WindowListener {
-  var _hasCredentials = false;
-  var _timesheet = false;
+  var _hasCredentials = true;
+  var _timesheet = true;
 
   @override
   void initState() {
@@ -56,6 +56,7 @@ class HasdAppState extends ConsumerState<HasdApp> with WindowListener {
   }
 
   void _init(AppSettings settings) {
+    return;
     final hasCredentials = settings.apiKey.isNotEmpty;
     if (_hasCredentials != hasCredentials) setState(() => _hasCredentials = hasCredentials);
     if (settings.apiKey.isEmpty) return;
@@ -78,13 +79,17 @@ class HasdAppState extends ConsumerState<HasdApp> with WindowListener {
       key: ValueKey(_hasCredentials),
       title: 'Hasd',
       debugShowCheckedModeBanner: false,
-      theme: MekTheme.build(),
+      theme: MekTheme.build(context: context).copyWith(
+        extensions: {
+          const DataBuilders(errorListener: T.showSnackBarError),
+        },
+      ),
       locale: const Locale('it', 'IT'),
       supportedLocales: kWidgetsSupportedLanguages.map(Locale.new),
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       builder: (context, child) {
         final colors = Theme.of(context).colorScheme;
-        child = MultiSplitViewTheme(
+        return MultiSplitViewTheme(
           data: MultiSplitViewThemeData(
             dividerPainter: DividerPainter(
               backgroundColor: colors.surfaceVariant,
@@ -93,13 +98,6 @@ class HasdAppState extends ConsumerState<HasdApp> with WindowListener {
           ),
           child: child!,
         );
-        child = MultiDispenser(
-          dispensable: const [
-            DataBuilders(errorListener: T.showSnackBarError),
-          ],
-          child: child,
-        );
-        return child;
       },
       home: _hasCredentials
           ? (_timesheet ? const TimesheetScreen() : const DashboardScreen())
