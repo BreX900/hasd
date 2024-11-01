@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hasd/redmine/redmine_dto.dart';
-import 'package:hasd/redmine/redmine_repository.dart';
+import 'package:hasd/apis/redmine/redmine_api.dart';
+import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
 import 'package:mekart/mekart.dart';
@@ -41,7 +41,7 @@ Future<void> launchFileWebView(BuildContext context, AttachmentDto attachment) a
     final uri = Uri.parse(attachment.contentUrl);
     final officeUri = Uri.parse('https://view.officeapps.live.com/op/view.aspx');
     final fileUri = officeUri.replace(queryParameters: {
-      'src': RedmineRepository.instance.joinApiKey(uri).toString(),
+      'src': RedmineApi.instance.joinApiKey(uri).toString(),
       'wdOrigin': 'BROWSELINK',
     });
     await launchUrl(fileUri);

@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/jira/jira_api.dart';
+import 'package:hasd/apis/redmine/redmine_api.dart';
 import 'package:hasd/redmine/hasd_providers.dart';
-import 'package:hasd/redmine/redmine_repository.dart';
 import 'package:mekart/mekart.dart';
 
 class WorkLogDto {
@@ -55,7 +55,7 @@ class JiraAppService implements AppService {
 }
 
 class RedmineAppService implements AppService {
-  RedmineRepository get _redmineApi => RedmineRepository.instance;
+  RedmineApi get _redmineApi => RedmineApi.instance;
 
   @override
   Future<IList<WorkLogDto>> fetchWorkLogs({Date? spentFrom, Date? spentTo, int? issueId}) async {

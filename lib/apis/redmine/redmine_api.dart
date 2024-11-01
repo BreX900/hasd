@@ -1,17 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:hasd/redmine/redmine_dto.dart';
-import 'package:hasd/redmine/redmine_serializable.dart';
+import 'package:hasd/apis/redmine/redmine_dto.dart';
+import 'package:hasd/apis/redmine/redmine_serializable.dart';
 import 'package:intl/intl.dart';
 import 'package:mekart/mekart.dart';
 
-class RedmineRepository {
-  static late RedmineRepository instance;
+class RedmineApi {
+  static late RedmineApi instance;
 
   final String _apiKey;
   final Dio httpClient;
 
-  RedmineRepository(this._apiKey, String baseUrl)
+  RedmineApi(this._apiKey, String baseUrl)
       : httpClient = Dio(BaseOptions(
           baseUrl: baseUrl,
           headers: {

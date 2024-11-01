@@ -1,15 +1,15 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:hasd/apis/youtrack/youtrack_dto.dart';
 import 'package:hasd/common/env.dart';
-import 'package:hasd/you_track/youtrack_dto.dart';
 
-class YoutrackRepository {
-  static YoutrackRepository? instance;
+class YoutrackApi {
+  static YoutrackApi? instance;
 
   final Dio _httpClient;
 
-  YoutrackRepository(String apiToken)
+  YoutrackApi(String apiToken)
       : _httpClient = Dio(BaseOptions(
           // ignore: avoid_redundant_argument_values
           baseUrl: Env.youtrackApiUrl,

@@ -1,10 +1,10 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hasd/apis/redmine/redmine_api.dart';
+import 'package:hasd/apis/redmine/redmine_dto.dart';
+import 'package:hasd/apis/youtrack/youtrack_api.dart';
+import 'package:hasd/apis/youtrack/youtrack_dto.dart';
 import 'package:hasd/app/app_service.dart';
-import 'package:hasd/redmine/redmine_dto.dart';
-import 'package:hasd/redmine/redmine_repository.dart';
-import 'package:hasd/you_track/youtrack_dto.dart';
-import 'package:hasd/you_track/youtrack_repository.dart';
 import 'package:mekart/mekart.dart';
 
 abstract final class HasdProviders {
@@ -17,14 +17,14 @@ abstract final class HasdProviders {
   static final settings = StreamProvider((ref) => settingsBin.stream.map((e) => e));
 
   static final project = FutureProvider.family((ref, int id) async {
-    return await RedmineRepository.instance.fetchProject(id);
+    return await RedmineApi.instance.fetchProject(id);
   });
 
   static final projectMemberships =
       FutureProvider.family<IList<MembershipDto>, int>((ref, int id) async {
     var memberships = <MembershipDto>[];
     while (true) {
-      final pagedMemberships = await RedmineRepository.instance.fetchProjectMemberships(
+      final pagedMemberships = await RedmineApi.instance.fetchProjectMemberships(
         id,
         offset: memberships.length,
       );
@@ -34,7 +34,7 @@ abstract final class HasdProviders {
   });
 
   static final issues = FutureProvider((ref) async {
-    return await RedmineRepository.instance.fetchIssues(
+    return await RedmineApi.instance.fetchIssues(
       assignedToId: -1,
       isOpen: true,
       extensions: const IListConst([
@@ -46,14 +46,14 @@ abstract final class HasdProviders {
   });
 
   static final issue = FutureProvider.family((ref, int issueId) async {
-    return await RedmineRepository.instance.fetchIssue(
+    return await RedmineApi.instance.fetchIssue(
       issueId,
       extensions: const IListConst(IssueExtensions.values),
     );
   });
 
   static final issueStatutes = FutureProvider((ref) async {
-    final statutes = await RedmineRepository.instance.fetchIssueStatutes();
+    final statutes = await RedmineApi.instance.fetchIssueStatutes();
     return statutes
         .where((e) => !e.isClosed)
         .map((e) => Reference(id: e.id, name: e.name))
@@ -82,7 +82,7 @@ abstract final class HasdProviders {
       doneRatio: status != null ? (appSettings.doneIssueStatus == status.id ? 100 : null) : null,
       assignedToId: assignedTo?.id,
     );
-    await RedmineRepository.instance.updateIssue(issue.id, data);
+    await RedmineApi.instance.updateIssue(issue.id, data);
 
     ref.invalidate(HasdProviders.issues);
     ref.invalidate(HasdProviders.issue(issue.id));
@@ -94,7 +94,7 @@ abstract final class HasdProviders {
     required String comment,
   }) async {
     final data = IssueUpdateDto(notes: comment);
-    await RedmineRepository.instance.updateIssue(issue.id, data);
+    await RedmineApi.instance.updateIssue(issue.id, data);
 
     ref.invalidate(HasdProviders.issues);
     ref.invalidate(HasdProviders.issue(issue.id));
@@ -110,13 +110,13 @@ abstract final class HasdProviders {
     date = DateTime.utc(date.year, date.month, date.day);
     final appSettings = await ref.read(HasdProviders.settings.future);
 
-    await RedmineRepository.instance.createTimeEntry(
+    await RedmineApi.instance.createTimeEntry(
       issueId: issue.id,
       activityId: activity.id,
       date: date,
       duration: duration,
     );
-    await YoutrackRepository.instance?.createIssueWorkItem(
+    await YoutrackApi.instance?.createIssueWorkItem(
       appSettings.youtrackIssueId,
       IssueWorkItemDto(
         date: date,

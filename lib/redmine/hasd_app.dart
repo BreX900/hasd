@@ -2,14 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hasd/apis/redmine/redmine_api.dart';
+import 'package:hasd/apis/redmine/redmine_dto.dart';
+import 'package:hasd/apis/youtrack/youtrack_api.dart';
 import 'package:hasd/common/env.dart';
 import 'package:hasd/common/t.dart';
 import 'package:hasd/redmine/hasd_providers.dart';
 import 'package:hasd/redmine/hasd_screens.dart';
-import 'package:hasd/redmine/redmine_dto.dart';
-import 'package:hasd/redmine/redmine_repository.dart';
 import 'package:hasd/redmine/timesheet_screen.dart';
-import 'package:hasd/you_track/youtrack_repository.dart';
 import 'package:mek/mek.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 import 'package:window_manager/window_manager.dart';
@@ -60,9 +60,9 @@ class HasdAppState extends ConsumerState<HasdApp> with WindowListener {
     final hasCredentials = settings.apiKey.isNotEmpty;
     if (_hasCredentials != hasCredentials) setState(() => _hasCredentials = hasCredentials);
     if (settings.apiKey.isEmpty) return;
-    RedmineRepository.instance = RedmineRepository(settings.apiKey, Env.redmineApiUrl);
-    YoutrackRepository.instance =
-        settings.youtrackApiKey.isNotEmpty ? YoutrackRepository(settings.youtrackApiKey) : null;
+    RedmineApi.instance = RedmineApi(settings.apiKey, Env.redmineApiUrl);
+    YoutrackApi.instance =
+        settings.youtrackApiKey.isNotEmpty ? YoutrackApi(settings.youtrackApiKey) : null;
   }
 
   void toggleTimesheet() {

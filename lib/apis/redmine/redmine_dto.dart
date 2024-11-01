@@ -1,11 +1,11 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:hasd/apis/redmine/redmine_serializable.dart';
 import 'package:hasd/common/env.dart';
-import 'package:hasd/redmine/redmine_serializable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:mek_data_class/mek_data_class.dart';
 import 'package:mekart/mekart.dart';
 
-part '../generated/redmine/redmine_dto.g.dart';
+part '../../generated/redmine/redmine_dto.g.dart';
 
 @DataClass()
 @RedmineSerializable(createFactory: true)
