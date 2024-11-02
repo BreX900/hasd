@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/common/utils.dart';
+import 'package:hasd/common/utils_more.dart';
+import 'package:hasd/models/models.dart';
 import 'package:hasd/redmine/hasd_app.dart';
 import 'package:hasd/redmine/hasd_drawer.dart';
 import 'package:hasd/redmine/hasd_providers.dart';
 import 'package:hasd/redmine/issue_dialog.dart';
-import 'package:hasd/redmine/utils.dart';
 import 'package:mek/mek.dart';
+import 'package:mekart/mekart.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -33,18 +35,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildBody({
     required AppSettings appSettings,
     required IList<Reference> issueStatutes,
-    required IList<IssueDto> issues,
+    required IList<IssueModel> issues,
   }) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
-    final statutes =
-        appSettings.issueStatutes.map((id) => issueStatutes.firstWhere((e) => e.id == id));
+    final statutes = appSettings.issueStatutes
+        .mapNonNulls((id) => issueStatutes.firstWhereOrNull((e) => e.id == id));
     final groups = issues.groupListsBy((e) => e.status.id);
+
+    if (statutes.isEmpty) return const InfoView(title: Text('Please select a issue statues'));
 
     return MultiSplitView(
       children: statutes.map((issueStatus) {
-        return DragTarget<IssueDto>(
+        return DragTarget<IssueModel>(
           onWillAcceptWithDetails: (details) => details.data.status.id != issueStatus.id,
           onAcceptWithDetails: (details) async =>
               HasdProviders.updateIssue(ref, details.data, status: issueStatus),
@@ -60,7 +64,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     itemBuilder: (context, index) {
                       final issue = issues[index];
 
-                      return DraggableWithSize<IssueDto>(
+                      return DraggableWithSize<IssueModel>(
                         data: issue,
                         affinity: Axis.horizontal,
                         childWhenDragging: const Padding(
@@ -117,7 +121,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
 class IssueCard extends StatelessWidget {
   final AppSettings appSettings;
-  final IssueDto issue;
+  final IssueModel issue;
 
   const IssueCard({
     super.key,
@@ -206,7 +210,7 @@ class IssueCard extends StatelessWidget {
 }
 
 class IssueInfoBar extends ConsumerWidget {
-  final IssueDto issue;
+  final IssueModel issue;
 
   const IssueInfoBar({
     super.key,
@@ -219,6 +223,7 @@ class IssueInfoBar extends ConsumerWidget {
       runSpacing: 2.0,
       spacing: 4.0,
       children: <Widget>[
+        Tooltip(message: 'Project', child: Text(issue.project.name)),
         Tooltip(
           message: 'Id',
           child: InkWell(
@@ -230,7 +235,7 @@ class IssueInfoBar extends ConsumerWidget {
         ),
         Tooltip(message: 'Status', child: Text(issue.status.name)),
         Tooltip(message: 'Author', child: Text(issue.author.name)),
-        Tooltip(message: 'Assigned to', child: Text(issue.assignedTo.name)),
+        Tooltip(message: 'Assigned to', child: Text(issue.assignedTo?.name ?? '---')),
         // Tooltip(message: 'Created on', child: Text(formatDateTime(issue.createdOn))),
         // Tooltip(message: 'Updated on', child: Text(formatDateTime(issue.updatedOn))),
         if (issue.closedOn != null)

@@ -5,7 +5,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:mek_data_class/mek_data_class.dart';
 import 'package:mekart/mekart.dart';
 
-part '../../generated/redmine/redmine_dto.g.dart';
+part '../../generated/apis/redmine/redmine_dto.g.dart';
 
 @DataClass()
 @RedmineSerializable(createFactory: true)
@@ -100,10 +100,7 @@ class Reference with _$Reference {
   final int id;
   final String name;
 
-  const Reference({
-    required this.id,
-    required this.name,
-  });
+  const Reference(this.id, this.name);
 
   factory Reference.fromJson(Map<String, dynamic> map) => _$ReferenceFromJson(map);
 }

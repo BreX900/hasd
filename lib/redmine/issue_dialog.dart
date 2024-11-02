@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/redmine/redmine_serializable.dart';
-import 'package:hasd/app/app_service.dart';
 import 'package:hasd/common/utils.dart';
+import 'package:hasd/common/utils_more.dart';
+import 'package:hasd/models/models.dart';
 import 'package:hasd/redmine/hasd_providers.dart';
-import 'package:hasd/redmine/utils.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,14 +20,8 @@ final _issueDialogProvider = FutureProvider.family((ref, int issueId) async {
   final issueStatutes = await ref.watch(HasdProviders.issueStatutes.future);
   final issue = await ref.watch(HasdProviders.issue(issueId).future);
   final project = await ref.watch(HasdProviders.project(issue.project.id).future);
-  final memberships = await ref.watch(HasdProviders.projectMemberships(project.id).future);
-  final users = memberships
-      .map((e) => e.user)
-      .nonNulls
-      .toIList()
-      .removeDuplicates()
-      .sortedBy((e) => e.name)
-      .toIList();
+  final users = await ref.watch(HasdProviders.projectMembers(project.id).future);
+
   final times = await ref.watch(HasdProviders.times((
     spentTo: null,
     spentFrom: null,
@@ -107,24 +101,24 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     _docsInFieldBloc.updateValue(settings.docsIn);
   }
 
-  Future<void> _saveInfo(IssueDto issue) async {
+  Future<void> _saveInfo(IssueModel issue) async {
     await HasdProviders.updateIssueSetting(issue, (settings) {
       return settings.change((b) => b..info = _infoFieldBloc.state.value);
     });
     _infoFieldBloc.markAsUpdated();
   }
 
-  Future<void> _saveStatus(IssueDto issue) async {
+  Future<void> _saveStatus(IssueModel issue) async {
     await HasdProviders.updateIssue(ref, issue, status: _statusFieldBloc.state.value);
     _assignedToFieldBloc.markAsUpdated();
   }
 
-  Future<void> _saveAssignedTo(IssueDto issue) async {
+  Future<void> _saveAssignedTo(IssueModel issue) async {
     await HasdProviders.updateIssue(ref, issue, assignedTo: _assignedToFieldBloc.state.value);
     _assignedToFieldBloc.markAsUpdated();
   }
 
-  Future<void> _addComment(IssueDto issue) async {
+  Future<void> _addComment(IssueModel issue) async {
     await HasdProviders.addComment(
       ref,
       issue: issue,
@@ -133,7 +127,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     _commentFieldBloc.clear();
   }
 
-  Future<void> _addIssueTime(IssueDto issue) async {
+  Future<void> _addIssueTime(IssueModel issue) async {
     await HasdProviders.addIssueTime(
       ref,
       issue: issue,
@@ -144,14 +138,14 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     _timeDurationFieldBloc.updateValue(null);
   }
 
-  Future<void> _saveBlockedBy(IssueDto issue) async {
+  Future<void> _saveBlockedBy(IssueModel issue) async {
     await HasdProviders.updateIssueSetting(issue, (settings) {
       return settings.change((b) => b..blockedBy = _blockedByFieldBloc.state.value);
     });
     _blockedByFieldBloc.markAsUpdated();
   }
 
-  Future<void> _saveDocsIn(IssueDto issue) async {
+  Future<void> _saveDocsIn(IssueModel issue) async {
     await HasdProviders.updateIssueSetting(issue, (settings) {
       return settings.change((b) => b..docsIn = _docsInFieldBloc.state.value);
     });
@@ -160,11 +154,11 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
 
   Widget _buildContent({
     required AppSettings appSettings,
-    required ProjectDto project,
+    required ProjectModel project,
     required IList<Reference> issueStatutes,
-    required IssueDto issue,
+    required IssueModel issue,
     required IList<Reference> users,
-    required IList<WorkLogDto> times,
+    required IList<WorkLogModel> times,
   }) {
     final attachments = issue.attachments;
     final journals = issue.journals;
@@ -179,6 +173,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     final textTheme = theme.textTheme;
 
     final leftSection = ListView(
+      padding: const EdgeInsets.only(left: 16.0, right: 8.0),
       children: [
         FieldText<String>(
           fieldBloc: _infoFieldBloc,
@@ -198,6 +193,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
       ],
     );
     final rightSection = ListView(
+      padding: const EdgeInsets.only(left: 8.0, right: 16.0),
       children: [
         FieldText<int>.from(
           value: issue.id,
@@ -541,8 +537,8 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
 }
 
 class IssueTile extends StatelessWidget {
-  final IssueDto currentIssue;
-  final IssueChildDto issue;
+  final IssueModel currentIssue;
+  final IssueChildModel issue;
 
   const IssueTile({
     super.key,
@@ -558,7 +554,7 @@ class IssueTile extends StatelessWidget {
     return currentIssue;
   });
 
-  static Widget buildTreeScene(IssueDto issue) {
+  static Widget buildTreeScene(IssueModel issue) {
     final parentId = issue.parentId;
     if (parentId == null) return IssueTile(currentIssue: issue, issue: issue);
 

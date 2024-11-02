@@ -4,10 +4,13 @@ import 'package:hasd/apis/redmine/redmine_api.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/youtrack/youtrack_api.dart';
 import 'package:hasd/apis/youtrack/youtrack_dto.dart';
-import 'package:hasd/app/app_service.dart';
+import 'package:hasd/models/models.dart';
+import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
 
 abstract final class HasdProviders {
+  static Service get _service => Service.instance;
+
   static final settingsBin = Bin<AppSettings>(
     name: 'redmine_settings',
     deserializer: (data) => AppSettings.fromJson(data as Map<String, dynamic>),
@@ -16,54 +19,31 @@ abstract final class HasdProviders {
 
   static final settings = StreamProvider((ref) => settingsBin.stream.map((e) => e));
 
-  static final project = FutureProvider.family((ref, int id) async {
-    return await RedmineApi.instance.fetchProject(id);
+  static final project = FutureProvider.family((ref, int projectId) async {
+    return await _service.fetchProject(projectId);
   });
 
-  static final projectMemberships =
-      FutureProvider.family<IList<MembershipDto>, int>((ref, int id) async {
-    var memberships = <MembershipDto>[];
-    while (true) {
-      final pagedMemberships = await RedmineApi.instance.fetchProjectMemberships(
-        id,
-        offset: memberships.length,
-      );
-      memberships = [...memberships, ...pagedMemberships];
-      if (pagedMemberships.length < 100) return memberships.toIList();
-    }
+  static final projectMembers =
+      FutureProvider.family<IList<Reference>, int>((ref, int projectId) async {
+    return await _service.fetchProjectMembers(projectId);
   });
 
   static final issues = FutureProvider((ref) async {
-    return await RedmineApi.instance.fetchIssues(
-      assignedToId: -1,
-      isOpen: true,
-      extensions: const IListConst([
-        IssuesExtensions.attachments,
-        IssuesExtensions.spentTime,
-        IssuesExtensions.relations,
-      ]),
-    );
+    return await _service.fetchIssues();
   });
 
   static final issue = FutureProvider.family((ref, int issueId) async {
-    return await RedmineApi.instance.fetchIssue(
-      issueId,
-      extensions: const IListConst(IssueExtensions.values),
-    );
+    return await _service.fetchIssue(issueId);
   });
 
   static final issueStatutes = FutureProvider((ref) async {
-    final statutes = await RedmineApi.instance.fetchIssueStatutes();
-    return statutes
-        .where((e) => !e.isClosed)
-        .map((e) => Reference(id: e.id, name: e.name))
-        .toIList();
+    return await _service.fetchAllIssueStatues();
   });
 
   static final times =
       FutureProvider.family((ref, ({Date? spentFrom, Date? spentTo, int? issueId}) _) async {
     final (:spentFrom, :spentTo, :issueId) = _;
-    return await AppService.instance.fetchWorkLogs(
+    return await _service.fetchWorkLogs(
       spentFrom: spentFrom,
       spentTo: spentTo,
       issueId: issueId,
@@ -72,7 +52,7 @@ abstract final class HasdProviders {
 
   static Future<void> updateIssue(
     WidgetRef ref,
-    IssueDto issue, {
+    IssueModel issue, {
     Reference? status,
     Reference? assignedTo,
   }) async {
@@ -90,7 +70,7 @@ abstract final class HasdProviders {
 
   static Future<void> addComment(
     WidgetRef ref, {
-    required IssueDto issue,
+    required IssueModel issue,
     required String comment,
   }) async {
     final data = IssueUpdateDto(notes: comment);
@@ -102,7 +82,7 @@ abstract final class HasdProviders {
 
   static Future<void> addIssueTime(
     WidgetRef ref, {
-    required IssueDto issue,
+    required IssueModel issue,
     required Reference activity,
     required DateTime date,
     required Duration duration,
@@ -133,7 +113,7 @@ abstract final class HasdProviders {
   }
 
   static Future<void> updateIssueSetting(
-    IssueDto issue,
+    IssueModel issue,
     IssueSettings Function(IssueSettings settings) updates,
   ) async {
     await HasdProviders.settingsBin.update((data) {

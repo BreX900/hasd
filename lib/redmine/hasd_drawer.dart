@@ -5,8 +5,8 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
+import 'package:hasd/common/utils_more.dart';
 import 'package:hasd/redmine/hasd_providers.dart';
-import 'package:hasd/redmine/utils.dart';
 import 'package:mek/mek.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 
@@ -52,8 +52,8 @@ class _HasdDrawerState extends ConsumerState<HasdDrawer> {
     _youtrackApiTokenFieldBloc.updateValue(appSettings.youtrackApiKey);
     _youtrackIssueIdBloc.updateValue(appSettings.youtrackIssueId);
 
-    _statuesFieldBloc.updateValue(appSettings.issueStatutes.map((issueStatusId) {
-      return issueStatutes.firstWhere((e) => e.id == issueStatusId);
+    _statuesFieldBloc.updateValue(issueStatutes.where((e) {
+      return appSettings.issueStatutes.contains(e.id);
     }).toISet());
     _statuesFieldBloc.valueChanges
         .map((e) => e ?? const ISet<Reference>.empty())

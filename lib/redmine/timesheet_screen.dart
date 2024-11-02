@@ -1,12 +1,12 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hasd/app/app_service.dart';
+import 'package:hasd/common/utils_more.dart';
+import 'package:hasd/models/models.dart';
 import 'package:hasd/redmine/hasd_app.dart';
 import 'package:hasd/redmine/hasd_drawer.dart';
 import 'package:hasd/redmine/hasd_providers.dart';
 import 'package:hasd/redmine/issue_dialog.dart';
-import 'package:hasd/redmine/utils.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
 import 'package:mekart/mekart.dart';
@@ -47,7 +47,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
     super.dispose();
   }
 
-  Widget _buildBody({required IList<WorkLogDto> monthTimes}) {
+  Widget _buildBody({required IList<WorkLogModel> monthTimes}) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 

@@ -47,16 +47,9 @@ void main() async {
     try {
       print(Env.jiraApiUrl);
       print(Env.jiraApiToken);
-      final api = JiraApi();
-      final data = await api.fetchIssue('PORT-143');
-      print(data);
-
-      // final data4 = await api.httpClient
-      //     .get('https://portit.atlassian.net/rest/api/3/issue/16476/worklog/12623');
-      // print(jsonEncode(data4.data));
-
-      final data2 = await api.fetchWorkLogs(data.id);
-      print(jsonEncode(data2));
+      final api = JiraApi.instance;
+      final data = await api.fetchIssueStatutes();
+      print(jsonEncode(data));
     } on DioException catch (error) {
       print(error);
       print(error.response?.data);
