@@ -7,32 +7,30 @@ import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/youtrack/youtrack_api.dart';
 import 'package:hasd/common/env.dart';
 import 'package:hasd/common/t.dart';
-import 'package:hasd/redmine/hasd_providers.dart';
-import 'package:hasd/redmine/hasd_screens.dart';
-import 'package:hasd/redmine/timesheet_screen.dart';
+import 'package:hasd/providers/providers.dart';
+import 'package:hasd/redmine/dashboard_screen.dart';
+import 'package:hasd/screens/timesheet_screen.dart';
 import 'package:mek/mek.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 import 'package:window_manager/window_manager.dart';
 
-class HasdApp extends ConsumerStatefulWidget {
+class App extends ConsumerStatefulWidget {
   final AppSettings settings;
 
-  const HasdApp({
+  const App({
     super.key,
     required this.settings,
   });
 
-  static HasdAppState of(BuildContext context) {
-    return context.findAncestorStateOfType<HasdAppState>()!;
-  }
+  static MainAppState of(BuildContext context) => context.findAncestorStateOfType<MainAppState>()!;
 
   @override
-  ConsumerState<HasdApp> createState() => HasdAppState();
+  ConsumerState<App> createState() => MainAppState();
 }
 
-class HasdAppState extends ConsumerState<HasdApp> with WindowListener {
+class MainAppState extends ConsumerState<App> with WindowListener {
   var _hasCredentials = true;
-  var _timesheet = true;
+  var _timesheet = false;
 
   @override
   void initState() {
@@ -50,9 +48,9 @@ class HasdAppState extends ConsumerState<HasdApp> with WindowListener {
   @override
   void onWindowFocus() {
     super.onWindowFocus();
-    ref.invalidate(HasdProviders.issues);
-    ref.invalidate(HasdProviders.issue);
-    ref.invalidate(HasdProviders.times);
+    ref.invalidate(Providers.issues);
+    ref.invalidate(Providers.issue);
+    ref.invalidate(Providers.times);
   }
 
   void _init(AppSettings settings) {
@@ -73,7 +71,7 @@ class HasdAppState extends ConsumerState<HasdApp> with WindowListener {
 
   @override
   Widget build(BuildContext context) {
-    ref.listenManualFuture(HasdProviders.settings.future, _init);
+    ref.listenManualFuture(Providers.settings.future, _init);
 
     return MaterialApp(
       key: ValueKey(_hasCredentials),
@@ -117,7 +115,7 @@ class _InitializationScreenState extends ConsumerState<_InitializationScreen> {
   final _redmineApiKey = FieldBloc(initialValue: '');
 
   Future<void> _submit() async {
-    await HasdProviders.settingsBin.update((data) {
+    await Providers.settingsBin.update((data) {
       return data.change((c) => c..apiKey = _redmineApiKey.state.value);
     });
   }

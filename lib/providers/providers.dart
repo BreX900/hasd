@@ -8,7 +8,7 @@ import 'package:hasd/models/models.dart';
 import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
 
-abstract final class HasdProviders {
+abstract final class Providers {
   static Service get _service => Service.instance;
 
   static final settingsBin = Bin<AppSettings>(
@@ -64,8 +64,8 @@ abstract final class HasdProviders {
     );
     await RedmineApi.instance.updateIssue(issue.id, data);
 
-    ref.invalidate(HasdProviders.issues);
-    ref.invalidate(HasdProviders.issue(issue.id));
+    ref.invalidate(Providers.issues);
+    ref.invalidate(Providers.issue(issue.id));
   }
 
   static Future<void> addComment(
@@ -76,8 +76,8 @@ abstract final class HasdProviders {
     final data = IssueUpdateDto(notes: comment);
     await RedmineApi.instance.updateIssue(issue.id, data);
 
-    ref.invalidate(HasdProviders.issues);
-    ref.invalidate(HasdProviders.issue(issue.id));
+    ref.invalidate(Providers.issues);
+    ref.invalidate(Providers.issue(issue.id));
   }
 
   static Future<void> addIssueTime(
@@ -88,7 +88,7 @@ abstract final class HasdProviders {
     required Duration duration,
   }) async {
     date = DateTime.utc(date.year, date.month, date.day);
-    final appSettings = await ref.read(HasdProviders.settings.future);
+    final appSettings = await ref.read(Providers.settings.future);
 
     await RedmineApi.instance.createTimeEntry(
       issueId: issue.id,
@@ -105,9 +105,9 @@ abstract final class HasdProviders {
       ),
     );
 
-    ref.invalidate(HasdProviders.times);
+    ref.invalidate(Providers.times);
 
-    await HasdProviders.settingsBin.update((data) {
+    await Providers.settingsBin.update((data) {
       return data.change((b) => b..defaultTimeActivity = activity.id);
     });
   }
@@ -116,7 +116,7 @@ abstract final class HasdProviders {
     IssueModel issue,
     IssueSettings Function(IssueSettings settings) updates,
   ) async {
-    await HasdProviders.settingsBin.update((data) {
+    await Providers.settingsBin.update((data) {
       final settings = updates(data.issues['${issue.id}'] ?? const IssueSettings());
       return data.change((b) => b..issues = data.issues.add('${issue.id}', settings));
     });

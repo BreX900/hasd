@@ -6,14 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/common/utils_more.dart';
-import 'package:hasd/redmine/hasd_providers.dart';
+import 'package:hasd/providers/providers.dart';
 import 'package:mek/mek.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 
 final _stateProvider = FutureProvider((ref) async {
-  final appSettings = await ref.watch(HasdProviders.settings.future);
+  final appSettings = await ref.watch(Providers.settings.future);
 
-  final issueStatutes = await ref.watch(HasdProviders.issueStatutes.future);
+  final issueStatutes = await ref.watch(Providers.issueStatutes.future);
 
   return (
     appSettings: appSettings,
@@ -21,14 +21,14 @@ final _stateProvider = FutureProvider((ref) async {
   );
 });
 
-class HasdDrawer extends ConsumerStatefulWidget {
-  const HasdDrawer({super.key});
+class AppDrawer extends ConsumerStatefulWidget {
+  const AppDrawer({super.key});
 
   @override
-  ConsumerState<HasdDrawer> createState() => _HasdDrawerState();
+  ConsumerState<AppDrawer> createState() => _AppDrawerState();
 }
 
-class _HasdDrawerState extends ConsumerState<HasdDrawer> {
+class _AppDrawerState extends ConsumerState<AppDrawer> {
   final _redmineApiKeyFieldBloc = FormControl<String>(
     validators: [Validators.required],
   );
@@ -59,13 +59,13 @@ class _HasdDrawerState extends ConsumerState<HasdDrawer> {
         .map((e) => e ?? const ISet<Reference>.empty())
         .distinct()
         .listen((values) async {
-      await HasdProviders.settingsBin.update(
+      await Providers.settingsBin.update(
           (data) => data.change((b) => b..issueStatutes = values.map((e) => e.id).toIList()));
     });
     _doneStatusFieldBloc
         .updateValue(issueStatutes.firstWhereOrNull((e) => e.id == appSettings.doneIssueStatus));
     _doneStatusFieldBloc.valueChanges.distinct().listen((value) async {
-      await HasdProviders.settingsBin
+      await Providers.settingsBin
           .update((data) => data.change((b) => b..doneIssueStatus = value?.id));
     });
   }
@@ -89,7 +89,7 @@ class _HasdDrawerState extends ConsumerState<HasdDrawer> {
               suffixIcon: EditFieldButton(
                 toggleableObscureText: true,
                 onSubmit: () async {
-                  await HasdProviders.settingsBin.update((data) {
+                  await Providers.settingsBin.update((data) {
                     return data.change((c) => c..apiKey = _redmineApiKeyFieldBloc.value!);
                   });
                   _redmineApiKeyFieldBloc.markAsPristine();
@@ -138,7 +138,7 @@ class _HasdDrawerState extends ConsumerState<HasdDrawer> {
               suffixIcon: EditFieldButton(
                 toggleableObscureText: true,
                 onSubmit: () async {
-                  await HasdProviders.settingsBin.update((data) {
+                  await Providers.settingsBin.update((data) {
                     return data.change((c) => c.youtrackApiKey = _youtrackApiTokenFieldBloc.value!);
                   });
                   _youtrackApiTokenFieldBloc.markAsPristine();
@@ -154,7 +154,7 @@ class _HasdDrawerState extends ConsumerState<HasdDrawer> {
               labelText: 'Issue for spent time',
               suffixIcon: EditFieldButton(
                 onSubmit: () async {
-                  await HasdProviders.settingsBin.update((data) {
+                  await Providers.settingsBin.update((data) {
                     return data.change((c) => c.youtrackIssueId = _youtrackIssueIdBloc.value!);
                   });
                   _youtrackIssueIdBloc.markAsPristine();

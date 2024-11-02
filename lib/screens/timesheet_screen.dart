@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/common/utils_more.dart';
 import 'package:hasd/models/models.dart';
-import 'package:hasd/redmine/hasd_app.dart';
-import 'package:hasd/redmine/hasd_drawer.dart';
-import 'package:hasd/redmine/hasd_providers.dart';
-import 'package:hasd/redmine/issue_dialog.dart';
+import 'package:hasd/providers/providers.dart';
+import 'package:hasd/screens/app.dart';
+import 'package:hasd/screens/app_drawer.dart';
+import 'package:hasd/screens/issue_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
 import 'package:mekart/mekart.dart';
@@ -15,9 +15,9 @@ import 'package:recase/recase.dart';
 final _stateProvider = FutureProvider.family((ref, (Date, Date) _) async {
   final (spentFrom, spentTo) = _;
 
-  final appSettings = await ref.watch(HasdProviders.settings.future);
+  final appSettings = await ref.watch(Providers.settings.future);
 
-  final times = await ref.watch(HasdProviders.times((
+  final times = await ref.watch(Providers.times((
     spentFrom: spentFrom,
     spentTo: spentTo,
     issueId: null,
@@ -113,12 +113,12 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
         title: const Text('Timesheet'),
         actions: [
           IconButton(
-            onPressed: () => HasdApp.of(context).toggleTimesheet(),
+            onPressed: () => App.of(context).toggleTimesheet(),
             icon: const Icon(Icons.table_chart),
           ),
         ],
       ),
-      drawer: const HasdDrawer(),
+      drawer: const AppDrawer(),
       body: Column(
         children: [
           MonthCalendarHeader(

@@ -7,8 +7,8 @@ import 'package:flutter/material.dart' hide Notification;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/jira/jira_api.dart';
 import 'package:hasd/common/env.dart';
-import 'package:hasd/redmine/hasd_app.dart';
-import 'package:hasd/redmine/hasd_providers.dart';
+import 'package:hasd/providers/providers.dart';
+import 'package:hasd/screens/app.dart';
 import 'package:logging/logging.dart';
 import 'package:mek/mek.dart';
 import 'package:mekart/mekart.dart';
@@ -62,8 +62,8 @@ void main() async {
 
   runApp(UncontrolledProviderScope(
     container: container,
-    child: HasdApp(
-      settings: await container.read(HasdProviders.settings.future),
+    child: App(
+      settings: await container.read(Providers.settings.future),
     ),
   ));
 }

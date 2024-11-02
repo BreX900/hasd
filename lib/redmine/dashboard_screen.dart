@@ -6,20 +6,20 @@ import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/common/utils.dart';
 import 'package:hasd/common/utils_more.dart';
 import 'package:hasd/models/models.dart';
-import 'package:hasd/redmine/hasd_app.dart';
-import 'package:hasd/redmine/hasd_drawer.dart';
-import 'package:hasd/redmine/hasd_providers.dart';
-import 'package:hasd/redmine/issue_dialog.dart';
+import 'package:hasd/providers/providers.dart';
+import 'package:hasd/screens/app.dart';
+import 'package:hasd/screens/app_drawer.dart';
+import 'package:hasd/screens/issue_dialog.dart';
 import 'package:mek/mek.dart';
 import 'package:mekart/mekart.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 final _stateProvider = FutureProvider((ref) async {
-  final appSettings = await ref.watch(HasdProviders.settings.future);
+  final appSettings = await ref.watch(Providers.settings.future);
 
-  final issueStatutes = await ref.watch(HasdProviders.issueStatutes.future);
-  final issues = await ref.watch(HasdProviders.issues.future);
+  final issueStatutes = await ref.watch(Providers.issueStatutes.future);
+  final issues = await ref.watch(Providers.issues.future);
 
   return (appSettings: appSettings, issueStatutes: issueStatutes, issues: issues);
 });
@@ -51,7 +51,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return DragTarget<IssueModel>(
           onWillAcceptWithDetails: (details) => details.data.status.id != issueStatus.id,
           onAcceptWithDetails: (details) async =>
-              HasdProviders.updateIssue(ref, details.data, status: issueStatus),
+              Providers.updateIssue(ref, details.data, status: issueStatus),
           builder: (context, draggedIssues, __) {
             final issues = [...draggedIssues.nonNulls, ...?groups[issueStatus.id]];
 
@@ -101,13 +101,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         title: const Text('Dashboard'),
         actions: [
           IconButton(
-            onPressed: () => HasdApp.of(context).toggleTimesheet(),
+            onPressed: () => App.of(context).toggleTimesheet(),
             icon: const Icon(Icons.dashboard),
           ),
         ],
         flexibleSpace: LinearProgressIndicatorBar(isVisible: state.isLoading),
       ),
-      drawer: const HasdDrawer(),
+      drawer: const AppDrawer(),
       body: state.buildScene(
         data: (data) => _buildBody(
           appSettings: data.appSettings,
@@ -142,7 +142,7 @@ class IssueCard extends StatelessWidget {
     final banners = <Widget>[
       if (blockedBy != null)
         Consumer(builder: (context, ref, _) {
-          final issueState = ref.watch(HasdProviders.issue(blockedBy));
+          final issueState = ref.watch(Providers.issue(blockedBy));
 
           return ListTile(
             onTap: () async => showDialog(
@@ -155,7 +155,7 @@ class IssueCard extends StatelessWidget {
         }),
       if (docsIn != null)
         Consumer(builder: (context, ref, _) {
-          final issueState = ref.watch(HasdProviders.issue(docsIn));
+          final issueState = ref.watch(Providers.issue(docsIn));
 
           return ListTile(
             onTap: () async => showDialog(

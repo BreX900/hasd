@@ -3,7 +3,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/redmine/redmine_api.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/models/models.dart';
-import 'package:hasd/redmine/hasd_providers.dart';
+import 'package:hasd/providers/providers.dart';
 import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
 
@@ -65,7 +65,7 @@ class RedmineService implements Service {
 
   @override
   Future<IList<WorkLogModel>> fetchWorkLogs({Date? spentFrom, Date? spentTo, int? issueId}) async {
-    final timeEntries = await HasdProviders.fetchAll((limit, offset) async {
+    final timeEntries = await Providers.fetchAll((limit, offset) async {
       return await _redmineApi.fetchTimeEntries(
         userId: -1,
         limit: limit,

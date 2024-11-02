@@ -9,20 +9,20 @@ import 'package:hasd/apis/redmine/redmine_serializable.dart';
 import 'package:hasd/common/utils.dart';
 import 'package:hasd/common/utils_more.dart';
 import 'package:hasd/models/models.dart';
-import 'package:hasd/redmine/hasd_providers.dart';
+import 'package:hasd/providers/providers.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 final _issueDialogProvider = FutureProvider.family((ref, int issueId) async {
-  final appSettings = await ref.watch(HasdProviders.settings.future);
+  final appSettings = await ref.watch(Providers.settings.future);
 
-  final issueStatutes = await ref.watch(HasdProviders.issueStatutes.future);
-  final issue = await ref.watch(HasdProviders.issue(issueId).future);
-  final project = await ref.watch(HasdProviders.project(issue.project.id).future);
-  final users = await ref.watch(HasdProviders.projectMembers(project.id).future);
+  final issueStatutes = await ref.watch(Providers.issueStatutes.future);
+  final issue = await ref.watch(Providers.issue(issueId).future);
+  final project = await ref.watch(Providers.project(issue.project.id).future);
+  final users = await ref.watch(Providers.projectMembers(project.id).future);
 
-  final times = await ref.watch(HasdProviders.times((
+  final times = await ref.watch(Providers.times((
     spentTo: null,
     spentFrom: null,
     issueId: issueId,
@@ -102,24 +102,24 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
   }
 
   Future<void> _saveInfo(IssueModel issue) async {
-    await HasdProviders.updateIssueSetting(issue, (settings) {
+    await Providers.updateIssueSetting(issue, (settings) {
       return settings.change((b) => b..info = _infoFieldBloc.state.value);
     });
     _infoFieldBloc.markAsUpdated();
   }
 
   Future<void> _saveStatus(IssueModel issue) async {
-    await HasdProviders.updateIssue(ref, issue, status: _statusFieldBloc.state.value);
+    await Providers.updateIssue(ref, issue, status: _statusFieldBloc.state.value);
     _assignedToFieldBloc.markAsUpdated();
   }
 
   Future<void> _saveAssignedTo(IssueModel issue) async {
-    await HasdProviders.updateIssue(ref, issue, assignedTo: _assignedToFieldBloc.state.value);
+    await Providers.updateIssue(ref, issue, assignedTo: _assignedToFieldBloc.state.value);
     _assignedToFieldBloc.markAsUpdated();
   }
 
   Future<void> _addComment(IssueModel issue) async {
-    await HasdProviders.addComment(
+    await Providers.addComment(
       ref,
       issue: issue,
       comment: _commentFieldBloc.state.value,
@@ -128,7 +128,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
   }
 
   Future<void> _addIssueTime(IssueModel issue) async {
-    await HasdProviders.addIssueTime(
+    await Providers.addIssueTime(
       ref,
       issue: issue,
       activity: _timeActivityFieldBloc.state.value!,
@@ -139,14 +139,14 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
   }
 
   Future<void> _saveBlockedBy(IssueModel issue) async {
-    await HasdProviders.updateIssueSetting(issue, (settings) {
+    await Providers.updateIssueSetting(issue, (settings) {
       return settings.change((b) => b..blockedBy = _blockedByFieldBloc.state.value);
     });
     _blockedByFieldBloc.markAsUpdated();
   }
 
   Future<void> _saveDocsIn(IssueModel issue) async {
-    await HasdProviders.updateIssueSetting(issue, (settings) {
+    await Providers.updateIssueSetting(issue, (settings) {
       return settings.change((b) => b..docsIn = _docsInFieldBloc.state.value);
     });
     _docsInFieldBloc.markAsUpdated();
@@ -388,7 +388,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
                 return Text('Estimated Hours: $oldValue -> $newValue');
               }),
             JournalDetailDto.statusId => Consumer(builder: (context, ref, _) {
-                final statutes = ref.watch(HasdProviders.issueStatutes).valueOrNull;
+                final statutes = ref.watch(Providers.issueStatutes).valueOrNull;
                 if (statutes == null) return const Text('...');
 
                 String format(String? value) {
@@ -547,9 +547,9 @@ class IssueTile extends StatelessWidget {
   });
 
   static final _rootIssueProvider = FutureProvider.family.autoDispose((ref, int parentId) async {
-    var currentIssue = await ref.watch(HasdProviders.issue(parentId).future);
+    var currentIssue = await ref.watch(Providers.issue(parentId).future);
     while (currentIssue.parentId != null) {
-      currentIssue = await ref.watch(HasdProviders.issue(currentIssue.parentId!).future);
+      currentIssue = await ref.watch(Providers.issue(currentIssue.parentId!).future);
     }
     return currentIssue;
   });
