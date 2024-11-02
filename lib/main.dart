@@ -1,12 +1,8 @@
-import 'dart:convert';
 import 'dart:math';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Notification;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hasd/apis/jira/jira_api.dart';
-import 'package:hasd/common/env.dart';
 import 'package:hasd/providers/providers.dart';
 import 'package:hasd/screens/app.dart';
 import 'package:logging/logging.dart';
@@ -43,18 +39,18 @@ void main() async {
   //     ..youtrackApiKey = '');
   // });
 
-  if (false) {
-    try {
-      print(Env.jiraApiUrl);
-      print(Env.jiraApiToken);
-      final api = JiraApi.instance;
-      final data = await api.fetchIssueStatutes();
-      print(jsonEncode(data));
-    } on DioException catch (error) {
-      print(error);
-      print(error.response?.data);
-    }
-  }
+  // if (false) {
+  //   try {
+  //     print(Env.jiraApiUrl);
+  //     print(Env.jiraApiToken);
+  //     final api = JiraApi.instance;
+  //     final data = await api.fetchIssueStatutes();
+  //     print(jsonEncode(data));
+  //   } on DioException catch (error) {
+  //     print(error);
+  //     print(error.response?.data);
+  //   }
+  // }
 
   final container = ProviderContainer(
     observers: const [Observers.provider],

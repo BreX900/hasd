@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/jira/jira_api.dart';
 import 'package:hasd/apis/jira/jira_dto.dart';
+import 'package:hasd/apis/jira/jira_markup_resolver.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
-import 'package:hasd/common/env.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
@@ -15,6 +15,8 @@ class JiraService implements Service {
   JiraApi get _jiraApi => JiraApi.instance;
 
   const JiraService._();
+
+  Map<String, String> get authorizationHeaders => _jiraApi.authorizationHeaders;
 
   @override
   Future<ProjectModel> fetchProject(int projectId) async {
@@ -27,10 +29,9 @@ class JiraService implements Service {
 
   @override
   Future<IList<Reference>> fetchProjectMembers(int projectId) async {
-    final user = await _jiraApi.fetchCurrentUser(Env.jiraEmail);
     final project = await _jiraApi.fetchProject(IdOrUid.id(projectId));
     final users = await _jiraApi.fetchProjectMembers(
-      accountId: user.accountId,
+      query: '',
       projectKeys: ISet([project.key]),
     );
     return users.map((e) => e.toModel()).toIList();
@@ -114,7 +115,9 @@ extension on JiraIssueDto {
       closedOn: null,
       dueDate: null,
       subject: summary,
-      description: description ?? '',
+      description: description != null
+          ? JiraMarkdownBuilder(attachments: attachment, data: description!)
+          : '',
       attachments: attachment.map((e) => e.toModel()).toIList(),
       journals: const IList.empty(),
       children: const IList.empty(),

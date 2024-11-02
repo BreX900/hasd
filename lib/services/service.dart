@@ -7,6 +7,8 @@ import 'package:mekart/mekart.dart';
 abstract interface class Service {
   static Service get instance => JiraService.instance;
 
+  Map<String, String> get authorizationHeaders;
+
   Future<ProjectModel> fetchProject(int projectId);
 
   Future<IList<Reference>> fetchProjectMembers(int projectId);

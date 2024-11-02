@@ -11,8 +11,10 @@ import 'package:hasd/common/utils.dart';
 import 'package:hasd/common/utils_more.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/providers/providers.dart';
+import 'package:hasd/services/service.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 final _issueDialogProvider = FutureProvider.family((ref, int issueId) async {
@@ -52,28 +54,23 @@ class IssueDialog extends ConsumerStatefulWidget {
 }
 
 class _IssueDialogState extends ConsumerState<IssueDialog> {
-  final _infoFieldBloc = FieldBloc(initialValue: '');
+  final _infoFieldBloc = FormControl<String>();
 
-  final _statusFieldBloc = FieldBloc<Reference?>(initialValue: null);
-  final _assignedToFieldBloc = FieldBloc<Reference?>(initialValue: null);
+  final _statusFieldBloc = FormControl<Reference>();
+  final _assignedToFieldBloc = FormControl<Reference>();
 
-  final _commentFieldBloc = FieldBloc(initialValue: '');
+  final _commentFieldBloc = FormControl<String>();
 
-  final _timeActivityFieldBloc = FieldBloc<Reference?>(
-    initialValue: null,
-    validator: const RequiredValidation(),
+  final _timeActivityFieldBloc = FormControl<Reference>(
+    validators: [Validators.required],
   );
-  final _timeDateFieldBloc = FieldBloc<DateTime>(
-    initialValue: DateTime.now(),
+  final _timeDateFieldBloc = FormControl<DateTime>(
+    value: DateTime.now(),
   );
-  final _timeDurationFieldBloc = FieldBloc<Duration?>(
-    initialValue: null,
-    validator: const RequiredValidation(),
+  final _timeDurationFieldBloc = FormControl<Duration>(
+    validators: [Validators.required],
   );
-  late final _timeForm = ListFieldsBloc(fieldBlocs: [
-    _timeDateFieldBloc,
-    _timeDurationFieldBloc,
-  ]);
+  late final _timeForm = FormArray([_timeDateFieldBloc, _timeDurationFieldBloc]);
 
   final _blockedByFieldBloc = FieldBloc<int?>(initialValue: null);
   final _docsInFieldBloc = FieldBloc<int?>(initialValue: null);
@@ -98,7 +95,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
       _timeActivityFieldBloc.updateValue(workLogActivities.firstWhereOrNull((e) {
         return e.id == appSettings.defaultTimeActivity;
       }));
-      _timeForm.addFieldBlocs([_timeActivityFieldBloc]);
+      _timeForm.add(_timeActivityFieldBloc);
     }
 
     _blockedByFieldBloc.updateValue(settings.blockedBy);
@@ -107,37 +104,37 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
 
   Future<void> _saveInfo(IssueModel issue) async {
     await Providers.updateIssueSetting(issue, (settings) {
-      return settings.change((b) => b..info = _infoFieldBloc.state.value);
+      return settings.change((b) => b..info = _infoFieldBloc.value!);
     });
-    _infoFieldBloc.markAsUpdated();
+    _infoFieldBloc.markAsClean();
   }
 
   Future<void> _saveStatus(IssueModel issue) async {
-    await Providers.updateIssue(ref, issue, status: _statusFieldBloc.state.value);
-    _assignedToFieldBloc.markAsUpdated();
+    await Providers.updateIssue(ref, issue, status: _statusFieldBloc.value);
+    _assignedToFieldBloc.markAsClean();
   }
 
   Future<void> _saveAssignedTo(IssueModel issue) async {
-    await Providers.updateIssue(ref, issue, assignedTo: _assignedToFieldBloc.state.value);
-    _assignedToFieldBloc.markAsUpdated();
+    await Providers.updateIssue(ref, issue, assignedTo: _assignedToFieldBloc.value);
+    _assignedToFieldBloc.markAsClean();
   }
 
   Future<void> _addComment(IssueModel issue) async {
     await Providers.addComment(
       ref,
       issue: issue,
-      comment: _commentFieldBloc.state.value,
+      comment: _commentFieldBloc.value!,
     );
-    _commentFieldBloc.clear();
+    _commentFieldBloc.reset();
   }
 
   Future<void> _addIssueTime(IssueModel issue) async {
     await Providers.addIssueTime(
       ref,
       issue: issue,
-      activity: _timeActivityFieldBloc.state.value,
-      date: _timeDateFieldBloc.state.value,
-      duration: _timeDurationFieldBloc.state.value!,
+      activity: _timeActivityFieldBloc.value,
+      date: _timeDateFieldBloc.value!,
+      duration: _timeDurationFieldBloc.value!,
     );
     _timeDurationFieldBloc.updateValue(null);
   }
@@ -168,10 +165,9 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     final journals = issue.journals;
     final comments = journals.where((e) => e.notes.isNotEmpty).toList();
 
-    final spentTime = ref.watch(
-        _timeDurationFieldBloc.select((state) => formatDuration(state.value ?? Duration.zero)));
+    final spentTime = ref.watch(_timeDurationFieldBloc.provider.value);
 
-    final isTimeFormValid = ref.watchCanSubmit(_timeForm);
+    final addIssueTime = _timeForm.handleSubmit(_addIssueTime);
 
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
@@ -179,13 +175,12 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     final leftSection = ListView(
       padding: const EdgeInsets.only(left: 16.0, right: 8.0),
       children: [
-        FieldText<String>(
-          fieldBloc: _infoFieldBloc,
-          converter: FieldConvert.text,
+        ReactiveTextField<String>(
+          formControl: _infoFieldBloc,
           decoration: InputDecoration(
             labelText: 'Personal Info',
-            suffixIcon: SaveFieldButton(
-              fieldBloc: _infoFieldBloc,
+            suffixIcon: ReactiveSaveFieldButton(
+              formControl: _infoFieldBloc,
               onSubmit: () async => _saveInfo(issue),
             ),
           ),
@@ -193,7 +188,9 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: MarkdownBody(
-            onTapLink: (_, href, ___) => launchUrl(Uri.parse(href!)),
+            imageBuilder: (uri, _, __) =>
+                Image.network(uri.toString(), headers: Service.instance.authorizationHeaders),
+            onTapLink: (_, href, ___) async => launchUrl(Uri.parse(href!)),
             data: '${issue.description}',
           ),
         ),
@@ -226,12 +223,12 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
             ),
           ),
         ),
-        FieldDropdown<Reference?>(
-          fieldBloc: _statusFieldBloc,
+        ReactiveDropdownField<Reference?>(
+          formControl: _statusFieldBloc,
           decoration: InputDecoration(
             labelText: 'Status',
-            suffixIcon: SaveFieldButton(
-              fieldBloc: _statusFieldBloc,
+            suffixIcon: ReactiveSaveFieldButton(
+              formControl: _statusFieldBloc,
               onSubmit: () async => _saveStatus(issue),
             ),
           ),
@@ -247,9 +244,9 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
           converter: FieldConvert.from((value) => value?.name ?? '', (text) => null),
           decoration: const InputDecoration(labelText: 'Author'),
         ),
-        FieldTypehead<Reference?>(
-          fieldBloc: _assignedToFieldBloc,
-          toText: (value) => value?.name ?? '',
+        ReactiveTypeAheadField<Reference?>(
+          formControl: _assignedToFieldBloc,
+          // toText: (value) => value?.name ?? '',
           debounceDuration: Duration.zero,
           suggestionsCallback: (text) => users.where((element) {
             return element.name.toLowerCase().contains(text.toLowerCase());
@@ -257,11 +254,15 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
           itemBuilder: (context, item) => ListTile(
             title: Text(item!.name),
           ),
-          decoration: InputDecoration(
-            labelText: 'Assigned to',
-            suffixIcon: SaveFieldButton(
-              fieldBloc: _assignedToFieldBloc,
-              onSubmit: () async => _saveAssignedTo(issue),
+          builder: (field) => TextField(
+            controller: field.controller,
+            focusNode: field.focusNode,
+            decoration: InputDecoration(
+              labelText: 'Assigned to',
+              suffixIcon: ReactiveSaveFieldButton(
+                formControl: _assignedToFieldBloc,
+                onSubmit: () async => _saveAssignedTo(issue),
+              ),
             ),
           ),
         ),
@@ -304,15 +305,16 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
             },
           ),
         ),
-        FieldText<String>(
-          fieldBloc: _commentFieldBloc,
-          converter: FieldConvert.text,
+        Padding(
           padding: const EdgeInsets.all(16.0),
-          decoration: InputDecoration(
-            labelText: 'Comment',
-            suffixIcon: IconButton(
-              onPressed: () async => _addComment(issue),
-              icon: const Icon(Icons.send),
+          child: ReactiveTextField<String>(
+            formControl: _commentFieldBloc,
+            decoration: InputDecoration(
+              labelText: 'Comment',
+              suffixIcon: IconButton(
+                onPressed: () async => _addComment(issue),
+                icon: const Icon(Icons.send),
+              ),
             ),
           ),
         )
@@ -341,8 +343,8 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
             children: [
               if (workLogActivities != null)
                 Expanded(
-                  child: FieldDropdown(
-                    fieldBloc: _timeActivityFieldBloc,
+                  child: ReactiveDropdownField(
+                    formControl: _timeActivityFieldBloc,
                     decoration: const InputDecoration(labelText: 'Activity'),
                     items: workLogActivities.map((e) {
                       return DropdownMenuItem(
@@ -353,21 +355,21 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
                   ),
                 ),
               Expanded(
-                child: FieldDateTime(
-                  fieldBloc: _timeDateFieldBloc,
+                child: ReactiveDateTimeField(
+                  formControl: _timeDateFieldBloc,
                   decoration: const InputDecoration(labelText: 'Date'),
                   format: DateFormat.yMd(Localizations.localeOf(context).languageCode),
                   picker: const DateTimePicker.date(),
                 ),
               ),
               Expanded(
-                child: FieldText<Duration?>(
-                  fieldBloc: _timeDurationFieldBloc,
-                  converter: const HoursFieldConverter(),
+                child: TypedReactiveTextField<Duration>(
+                  formControl: _timeDurationFieldBloc,
+                  valueAccessor: ControlHoursAccessor(),
                   decoration: InputDecoration(
-                    labelText: 'Spent time: $spentTime',
+                    labelText: 'Spent time: ${formatDuration(spentTime ?? Duration.zero)}',
                     suffixIcon: IconButton(
-                      onPressed: isTimeFormValid ? () async => _addIssueTime(issue) : null,
+                      onPressed: () => addIssueTime(issue),
                       icon: const Icon(Icons.save),
                     ),
                   ),

@@ -15,6 +15,9 @@ class RedmineService implements Service {
   const RedmineService._();
 
   @override
+  Map<String, String> get authorizationHeaders => _redmineApi.authorizationHeaders;
+
+  @override
   Future<ProjectModel> fetchProject(int projectId) async {
     final project = await _redmineApi.fetchProject(projectId);
     return ProjectModel(

@@ -8,19 +8,21 @@ import 'package:mekart/mekart.dart';
 class RedmineApi {
   static late RedmineApi instance;
 
+  final String _baseUrl;
   final String _apiKey;
-  final Dio httpClient;
+  late final Dio httpClient = Dio(BaseOptions(
+    baseUrl: _baseUrl,
+    headers: {
+      ...authorizationHeaders,
+      Headers.contentTypeHeader: '${Headers.jsonMimeType}',
+      Headers.acceptHeader: '${Headers.jsonMimeType}',
+    },
+    listFormat: ListFormat.csv,
+  ));
 
-  RedmineApi(this._apiKey, String baseUrl)
-      : httpClient = Dio(BaseOptions(
-          baseUrl: baseUrl,
-          headers: {
-            'X-Redmine-API-Key': _apiKey,
-            Headers.contentTypeHeader: '${Headers.jsonMimeType}',
-            Headers.acceptHeader: '${Headers.jsonMimeType}',
-          },
-          listFormat: ListFormat.csv,
-        ));
+  RedmineApi(this._apiKey, this._baseUrl);
+
+  Map<String, String> get authorizationHeaders => {'X-Redmine-API-Key': _apiKey};
 
   Future<ProjectDto> fetchProject(int id) async {
     final response =

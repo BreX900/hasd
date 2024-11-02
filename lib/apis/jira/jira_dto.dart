@@ -110,6 +110,22 @@ class JiraProjectDto with _$JiraProjectDto {
 
 @DataClass()
 @JiraSerializable(createFactory: true)
+class JiraProjectRoleDto with _$JiraProjectDto {
+  @JsonKey(fromJson: int.parse)
+  final int id;
+  final String name;
+
+  const JiraProjectRoleDto({
+    required this.id,
+    required this.name,
+  });
+
+  factory JiraProjectRoleDto.fromJson(Map<String, dynamic> map) =>
+      _$JiraProjectRoleDtoFromJson(map);
+}
+
+@DataClass()
+@JiraSerializable(createFactory: true)
 class JiraIssueDto with _$JiraIssueDto {
   @JsonKey(fromJson: int.parse)
   final int id;

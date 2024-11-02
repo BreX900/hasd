@@ -28,15 +28,19 @@ class JiraApi {
   static final _utf8ToBase64 = utf8.fuse(base64);
   static final JiraApi instance = JiraApi._();
 
-  final httpClient = Dio(BaseOptions(
+  late final httpClient = Dio(BaseOptions(
     baseUrl: '${Env.jiraApiUrl}/rest/api',
     headers: {
+      ...authorizationHeaders,
       Headers.contentTypeHeader: Headers.jsonContentType,
-      'authorization': 'Basic ${_utf8ToBase64.encode('${Env.jiraEmail}:${Env.jiraApiToken}')}',
     },
   ));
 
   JiraApi._();
+
+  Map<String, String> get authorizationHeaders => {
+        'authorization': 'Basic ${_utf8ToBase64.encode('${Env.jiraEmail}:${Env.jiraApiToken}')}',
+      };
 
   Future<UserDto> fetchCurrentUser(String username) async {
     final response = await httpClient.get<Map<String, dynamic>>('/3/myself');
@@ -48,17 +52,44 @@ class JiraApi {
     return JiraProjectDto.fromJson(response.data!);
   }
 
+  Future<IList<JiraProjectRoleDto>> fetchRoles() async {
+    final response = await httpClient.get<List<dynamic>>('/3/role');
+    return response.data!.map((e) {
+      return JiraProjectRoleDto.fromJson(e as Map<String, dynamic>);
+    }).toIList();
+  }
+
+  Future<IList<JiraProjectRoleDto>> fetchRole(int roleId) async {
+    final response = await httpClient.get<Map<String, dynamic>>('/3/role/$roleId');
+    return (response.data!['actors'] as List<dynamic>).map((e) {
+      return JiraProjectRoleDto.fromJson(e as Map<String, dynamic>);
+    }).toIList();
+  }
+
+  Future<IList<JiraProjectRoleDto>> fetchProjectRoles(IdOrUid projectIdOrKey) async {
+    final response = await httpClient.get<List<dynamic>>('/3/project/$projectIdOrKey/role');
+    return response.data!.map((e) {
+      return JiraProjectRoleDto.fromJson(e as Map<String, dynamic>);
+    }).toIList();
+  }
+
+  Future<IList<JiraProjectRoleDto>> fetchProjectRole(IdOrUid projectIdOrKey, int roleId) async {
+    final response =
+        await httpClient.get<Map<String, dynamic>>('/3/project/$projectIdOrKey/role/$roleId');
+    return (response.data!['actors'] as List<dynamic>).map((e) {
+      return JiraProjectRoleDto.fromJson(e as Map<String, dynamic>);
+    }).toIList();
+  }
+
   Future<IList<UserDto>> fetchProjectMembers({
-    required String accountId,
+    String? query,
+    String? accountId,
     required ISet<String> projectKeys,
   }) async {
-    print({
-      'accountId': accountId,
-      'projectKeys': projectKeys.join(','),
-    });
     final response = await httpClient
         .get<List<dynamic>>('/3/user/assignable/multiProjectSearch', queryParameters: {
-      'accountId': accountId,
+      if (query != null) 'query': query,
+      if (accountId != null) 'accountId': accountId,
       'projectKeys': projectKeys.join(','),
     });
     return response.data!.map((e) => UserDto.fromJson(e as Map<String, dynamic>)).toIList();

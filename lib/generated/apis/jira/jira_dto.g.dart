@@ -92,6 +92,30 @@ mixin _$JiraProjectDto {
       .toString();
 }
 
+mixin _$JiraProjectRoleDto {
+  JiraProjectRoleDto get _self => this as JiraProjectRoleDto;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JiraProjectRoleDto &&
+          runtimeType == other.runtimeType &&
+          _self.id == other.id &&
+          _self.name == other.name;
+  @override
+  int get hashCode {
+    var hashCode = 0;
+    hashCode = $hashCombine(hashCode, _self.id.hashCode);
+    hashCode = $hashCombine(hashCode, _self.name.hashCode);
+    return $hashFinish(hashCode);
+  }
+
+  @override
+  String toString() => (ClassToString('JiraProjectRoleDto')
+        ..add('id', _self.id)
+        ..add('name', _self.name))
+      .toString();
+}
+
 mixin _$JiraIssueDto {
   JiraIssueDto get _self => this as JiraIssueDto;
   @override
@@ -260,6 +284,19 @@ JiraProjectDto _$JiraProjectDtoFromJson(Map<String, dynamic> json) =>
         final val = JiraProjectDto(
           id: $checkedConvert('id', (v) => int.parse(v as String)),
           key: $checkedConvert('key', (v) => v as String),
+          name: $checkedConvert('name', (v) => v as String),
+        );
+        return val;
+      },
+    );
+
+JiraProjectRoleDto _$JiraProjectRoleDtoFromJson(Map<String, dynamic> json) =>
+    $checkedCreate(
+      'JiraProjectRoleDto',
+      json,
+      ($checkedConvert) {
+        final val = JiraProjectRoleDto(
+          id: $checkedConvert('id', (v) => int.parse(v as String)),
           name: $checkedConvert('name', (v) => v as String),
         );
         return val;

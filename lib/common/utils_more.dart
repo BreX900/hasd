@@ -5,6 +5,7 @@ import 'package:hasd/models/models.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
 import 'package:mekart/mekart.dart';
+import 'package:reactive_forms/reactive_forms.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const List<String> _wordMimeTypes = [
@@ -93,6 +94,30 @@ class HoursFieldConverter extends FieldConvert<Duration> {
   Duration? toValue(String text) {
     final regExp = RegExp(r'^ *(?:(\d+)d)? *?(?:(\d+)h)? *?(?:(\d+)m)? *$');
     final match = regExp.matchAsPrefix(text);
+    if (match == null) return null;
+
+    final days = match.group(1);
+    final hours = match.group(2);
+    final minutes = match.group(3);
+
+    return Duration(
+      hours: (hours != null ? int.parse(hours) : 0) + (days != null ? int.parse(days) * 8 : 0),
+      minutes: minutes != null ? int.parse(minutes) : 0,
+    );
+  }
+}
+
+class ControlHoursAccessor extends ControlValueAccessor<Duration, String> {
+  @override
+  String? modelToViewValue(Duration? modelValue) =>
+      modelValue != null ? formatDuration(modelValue) : '';
+
+  @override
+  Duration? viewToModelValue(String? viewValue) {
+    if (viewValue == null) return null;
+
+    final regExp = RegExp(r'^ *(?:(\d+)d)? *?(?:(\d+)h)? *?(?:(\d+)m)? *$');
+    final match = regExp.matchAsPrefix(viewValue);
     if (match == null) return null;
 
     final days = match.group(1);
