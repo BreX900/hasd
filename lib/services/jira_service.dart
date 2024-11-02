@@ -21,7 +21,7 @@ class JiraService implements Service {
     final project = await _jiraApi.fetchProject(IdOrUid.id(projectId));
     return ProjectModel(
       id: project.id,
-      timeEntryActivities: const IList.empty(),
+      workLogActivities: const IList.empty(),
     );
   }
 
@@ -77,6 +77,20 @@ class JiraService implements Service {
       );
     }).toIList();
   }
+
+  @override
+  Future<void> createWorkLog({
+    required int issueId,
+    required int? activityId,
+    required DateTime started,
+    required Duration timeSpent,
+  }) async {
+    final data = JiraWorkLogCreateDto(
+      started: started,
+      timeSpent: timeSpent,
+    );
+    await _jiraApi.createWorkLog(IdOrUid.id(issueId), data);
+  }
 }
 
 extension on JiraProjectDto {
@@ -100,8 +114,8 @@ extension on JiraIssueDto {
       closedOn: null,
       dueDate: null,
       subject: summary,
-      description: 'description',
-      attachments: const IList.empty(),
+      description: description ?? '',
+      attachments: attachment.map((e) => e.toModel()).toIList(),
       journals: const IList.empty(),
       children: const IList.empty(),
     );
@@ -110,4 +124,15 @@ extension on JiraIssueDto {
 
 extension on JiraIssueStatusDto {
   Reference toModel() => Reference(id, name);
+}
+
+extension on JiraAttachmentDto {
+  AttachmentModel toModel() {
+    return AttachmentModel(
+      filename: filename,
+      mimeType: mimeType,
+      thumbnailUrl: thumbnail,
+      contentUrl: content,
+    );
+  }
 }

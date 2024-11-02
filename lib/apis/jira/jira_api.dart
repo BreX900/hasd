@@ -114,4 +114,8 @@ class JiraApi {
       return data['worklogId'] as int;
     }).toIList();
   }
+
+  Future<void> createWorkLog(IdOrUid issueIdOrKey, JiraWorkLogCreateDto data) async {
+    await httpClient.post('/3/issue/$issueIdOrKey/worklog', data: data);
+  }
 }

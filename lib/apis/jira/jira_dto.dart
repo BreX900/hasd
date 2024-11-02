@@ -1,8 +1,26 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:hasd/apis/jira/jira_markup_dto.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:mek_data_class/mek_data_class.dart';
 
 part '../../generated/apis/jira/jira_dto.g.dart';
+
+class JiraSerializable extends JsonSerializable {
+  const JiraSerializable({
+    super.createFactory,
+    super.createToJson,
+    super.disallowUnrecognizedKeys,
+  }) : super(converters: const [DurationInSecondsConverter()]);
+}
+
+class DurationInSecondsConverter extends JsonConverter<Duration, int> {
+  const DurationInSecondsConverter();
+  @override
+  Duration fromJson(int json) => Duration(seconds: json);
+
+  @override
+  int toJson(Duration object) => object.inSeconds;
+}
 
 @DataClass()
 class JiraPage<T> with _$JiraPage<T> {
@@ -74,7 +92,7 @@ class JiraPageV2<T> with _$JiraPageV2<T> {
 }
 
 @DataClass()
-@JsonSerializable(createFactory: true)
+@JiraSerializable(createFactory: true)
 class JiraProjectDto with _$JiraProjectDto {
   @JsonKey(fromJson: int.parse)
   final int id;
@@ -91,43 +109,66 @@ class JiraProjectDto with _$JiraProjectDto {
 }
 
 @DataClass()
-@JsonSerializable(createFactory: true)
+@JiraSerializable(createFactory: true)
 class JiraIssueDto with _$JiraIssueDto {
   @JsonKey(fromJson: int.parse)
   final int id;
   final String key;
-  final Map<String, dynamic> fields;
 
-  @JsonKey(readValue: _readFromFields)
   final JiraProjectDto project;
-  @JsonKey(readValue: _readFromFields)
   final JiraIssueStatusDto status;
-  @JsonKey(readValue: _readFromFields)
   final UserDto? assignee;
-  @JsonKey(readValue: _readFromFields)
   final UserDto creator;
-  @JsonKey(readValue: _readFromFields)
   final String summary;
+  final JiraMarkupDto? description;
+  // @JsonKey(defaultValue: IList<JiraAttachmentDto>.empty)
+  final IList<JiraAttachmentDto> attachment;
 
   const JiraIssueDto({
     required this.id,
     required this.key,
-    required this.fields,
     required this.project,
     required this.status,
     required this.assignee,
     required this.creator,
     required this.summary,
+    required this.description,
+    required this.attachment,
   });
 
-  static Object? _readFromFields(Map data, String key) =>
-      (data['fields'] as Map<String, dynamic>)[key];
+  // static Object? _readFromFields(Map data, String key) =>
+  //     (data['fields'] as Map<String, dynamic>)[key];
 
-  factory JiraIssueDto.fromJson(Map<String, dynamic> map) => _$JiraIssueDtoFromJson(map);
+  factory JiraIssueDto.fromJson(Map<String, dynamic> map) =>
+      _$JiraIssueDtoFromJson({...map['fields'], ...map});
+}
+
+@JiraSerializable(createFactory: true)
+class JiraAttachmentDto {
+  @JsonKey(fromJson: int.parse)
+  final int id;
+  final String filename;
+  final UserDto author;
+  final DateTime created;
+  final String mimeType;
+  final String content; // url
+  final String? thumbnail; // url
+
+  const JiraAttachmentDto({
+    required this.id,
+    required this.filename,
+    required this.author,
+    required this.created,
+    required this.mimeType,
+    required this.content,
+    required this.thumbnail,
+  });
+
+  factory JiraAttachmentDto.fromJson(Map<String, dynamic> map) => _$JiraAttachmentDtoFromJson(map);
 }
 
 @DataClass()
-@JsonSerializable(createFactory: true)
+@JiraSerializable(createFactory: true)
 class JiraWorkLogDto with _$JiraWorkLogDto {
   @JsonKey(fromJson: int.parse)
   final int id;
@@ -159,8 +200,21 @@ class JiraWorkLogDto with _$JiraWorkLogDto {
   factory JiraWorkLogDto.fromJson(Map<String, dynamic> map) => _$JiraWorkLogDtoFromJson(map);
 }
 
+@JiraSerializable(createToJson: true)
+class JiraWorkLogCreateDto {
+  final DateTime started;
+  final Duration timeSpent;
+
+  const JiraWorkLogCreateDto({
+    required this.started,
+    required this.timeSpent,
+  });
+
+  Map<String, dynamic> toJson() => _$JiraWorkLogCreateDtoToJson(this);
+}
+
 @DataClass()
-@JsonSerializable(createFactory: true)
+@JiraSerializable(createFactory: true)
 class UserDto with _$UserDto {
   final String accountId;
   final String? emailAddress;
@@ -184,7 +238,7 @@ class UserDto with _$UserDto {
 }
 
 @DataClass()
-@JsonSerializable(createFactory: true)
+@JiraSerializable(createFactory: true)
 class JiraIssueStatusDto with _$JiraIssueStatusDto {
   @JsonKey(fromJson: int.parse)
   final int id;

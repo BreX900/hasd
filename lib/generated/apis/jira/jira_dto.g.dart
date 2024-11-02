@@ -101,23 +101,25 @@ mixin _$JiraIssueDto {
           runtimeType == other.runtimeType &&
           _self.id == other.id &&
           _self.key == other.key &&
-          $mapEquality.equals(_self.fields, other.fields) &&
           _self.project == other.project &&
           _self.status == other.status &&
           _self.assignee == other.assignee &&
           _self.creator == other.creator &&
-          _self.summary == other.summary;
+          _self.summary == other.summary &&
+          _self.description == other.description &&
+          _self.attachment == other.attachment;
   @override
   int get hashCode {
     var hashCode = 0;
     hashCode = $hashCombine(hashCode, _self.id.hashCode);
     hashCode = $hashCombine(hashCode, _self.key.hashCode);
-    hashCode = $hashCombine(hashCode, $mapEquality.hash(_self.fields));
     hashCode = $hashCombine(hashCode, _self.project.hashCode);
     hashCode = $hashCombine(hashCode, _self.status.hashCode);
     hashCode = $hashCombine(hashCode, _self.assignee.hashCode);
     hashCode = $hashCombine(hashCode, _self.creator.hashCode);
     hashCode = $hashCombine(hashCode, _self.summary.hashCode);
+    hashCode = $hashCombine(hashCode, _self.description.hashCode);
+    hashCode = $hashCombine(hashCode, _self.attachment.hashCode);
     return $hashFinish(hashCode);
   }
 
@@ -125,12 +127,13 @@ mixin _$JiraIssueDto {
   String toString() => (ClassToString('JiraIssueDto')
         ..add('id', _self.id)
         ..add('key', _self.key)
-        ..add('fields', _self.fields)
         ..add('project', _self.project)
         ..add('status', _self.status)
         ..add('assignee', _self.assignee)
         ..add('creator', _self.creator)
-        ..add('summary', _self.summary))
+        ..add('summary', _self.summary)
+        ..add('description', _self.description)
+        ..add('attachment', _self.attachment))
       .toString();
 }
 
@@ -271,33 +274,49 @@ JiraIssueDto _$JiraIssueDtoFromJson(Map<String, dynamic> json) =>
         final val = JiraIssueDto(
           id: $checkedConvert('id', (v) => int.parse(v as String)),
           key: $checkedConvert('key', (v) => v as String),
-          fields: $checkedConvert('fields', (v) => v as Map<String, dynamic>),
-          project: $checkedConvert(
-            'project',
-            (v) => JiraProjectDto.fromJson(v as Map<String, dynamic>),
-            readValue: JiraIssueDto._readFromFields,
-          ),
-          status: $checkedConvert(
-            'status',
-            (v) => JiraIssueStatusDto.fromJson(v as Map<String, dynamic>),
-            readValue: JiraIssueDto._readFromFields,
-          ),
+          project: $checkedConvert('project',
+              (v) => JiraProjectDto.fromJson(v as Map<String, dynamic>)),
+          status: $checkedConvert('status',
+              (v) => JiraIssueStatusDto.fromJson(v as Map<String, dynamic>)),
           assignee: $checkedConvert(
-            'assignee',
-            (v) =>
-                v == null ? null : UserDto.fromJson(v as Map<String, dynamic>),
-            readValue: JiraIssueDto._readFromFields,
-          ),
+              'assignee',
+              (v) => v == null
+                  ? null
+                  : UserDto.fromJson(v as Map<String, dynamic>)),
           creator: $checkedConvert(
-            'creator',
-            (v) => UserDto.fromJson(v as Map<String, dynamic>),
-            readValue: JiraIssueDto._readFromFields,
-          ),
-          summary: $checkedConvert(
-            'summary',
-            (v) => v as String,
-            readValue: JiraIssueDto._readFromFields,
-          ),
+              'creator', (v) => UserDto.fromJson(v as Map<String, dynamic>)),
+          summary: $checkedConvert('summary', (v) => v as String),
+          description: $checkedConvert(
+              'description',
+              (v) => v == null
+                  ? null
+                  : JiraMarkupDto.fromJson(v as Map<String, dynamic>)),
+          attachment: $checkedConvert(
+              'attachment',
+              (v) => IList<JiraAttachmentDto>.fromJson(
+                  v,
+                  (value) => JiraAttachmentDto.fromJson(
+                      value as Map<String, dynamic>))),
+        );
+        return val;
+      },
+    );
+
+JiraAttachmentDto _$JiraAttachmentDtoFromJson(Map<String, dynamic> json) =>
+    $checkedCreate(
+      'JiraAttachmentDto',
+      json,
+      ($checkedConvert) {
+        final val = JiraAttachmentDto(
+          id: $checkedConvert('id', (v) => int.parse(v as String)),
+          filename: $checkedConvert('filename', (v) => v as String),
+          author: $checkedConvert(
+              'author', (v) => UserDto.fromJson(v as Map<String, dynamic>)),
+          created:
+              $checkedConvert('created', (v) => DateTime.parse(v as String)),
+          mimeType: $checkedConvert('mimeType', (v) => v as String),
+          content: $checkedConvert('content', (v) => v as String),
+          thumbnail: $checkedConvert('thumbnail', (v) => v as String?),
         );
         return val;
       },
@@ -330,6 +349,14 @@ JiraWorkLogDto _$JiraWorkLogDtoFromJson(Map<String, dynamic> json) =>
       },
       fieldKeyMap: const {'timeSpent': 'timeSpentSeconds'},
     );
+
+Map<String, dynamic> _$JiraWorkLogCreateDtoToJson(
+        JiraWorkLogCreateDto instance) =>
+    <String, dynamic>{
+      'started': instance.started.toIso8601String(),
+      'timeSpent':
+          const DurationInSecondsConverter().toJson(instance.timeSpent),
+    };
 
 UserDto _$UserDtoFromJson(Map<String, dynamic> json) => $checkedCreate(
       'UserDto',

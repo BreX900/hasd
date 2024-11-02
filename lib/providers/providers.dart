@@ -83,18 +83,18 @@ abstract final class Providers {
   static Future<void> addIssueTime(
     WidgetRef ref, {
     required IssueModel issue,
-    required Reference activity,
+    required Reference? activity,
     required DateTime date,
     required Duration duration,
   }) async {
     date = DateTime.utc(date.year, date.month, date.day);
     final appSettings = await ref.read(Providers.settings.future);
 
-    await RedmineApi.instance.createTimeEntry(
+    await _service.createWorkLog(
       issueId: issue.id,
-      activityId: activity.id,
-      date: date,
-      duration: duration,
+      activityId: activity?.id,
+      started: date,
+      timeSpent: duration,
     );
     await YoutrackApi.instance?.createIssueWorkItem(
       appSettings.youtrackIssueId,
@@ -108,7 +108,7 @@ abstract final class Providers {
     ref.invalidate(Providers.times);
 
     await Providers.settingsBin.update((data) {
-      return data.change((b) => b..defaultTimeActivity = activity.id);
+      return data.change((b) => b..defaultTimeActivity = activity?.id);
     });
   }
 

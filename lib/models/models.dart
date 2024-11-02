@@ -25,11 +25,11 @@ class IdOrUid {
 
 class ProjectModel {
   final int id;
-  final IList<Reference> timeEntryActivities;
+  final IList<Reference>? workLogActivities;
 
   const ProjectModel({
     required this.id,
-    required this.timeEntryActivities,
+    required this.workLogActivities,
   });
 }
 
@@ -62,9 +62,9 @@ class IssueModel extends IssueChildModel {
   final DateTime? closedOn;
   final String? dueDate;
 
-  final String description;
+  final Object description;
 
-  final IList<AttachmentDto> attachments;
+  final IList<AttachmentModel> attachments;
   final IList<JournalDto> journals;
 
   const IssueModel({
@@ -94,5 +94,19 @@ class IssueChildModel {
     required this.id,
     required this.subject,
     required this.children,
+  });
+}
+
+class AttachmentModel {
+  final String filename;
+  final String mimeType;
+  final String? thumbnailUrl;
+  final String contentUrl;
+
+  const AttachmentModel({
+    required this.filename,
+    required this.mimeType,
+    required this.thumbnailUrl,
+    required this.contentUrl,
   });
 }

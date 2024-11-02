@@ -18,4 +18,11 @@ abstract interface class Service {
   Future<IssueModel> fetchIssue(int issueId);
 
   Future<IList<WorkLogModel>> fetchWorkLogs({Date? spentFrom, Date? spentTo, int? issueId});
+
+  Future<void> createWorkLog({
+    required int issueId,
+    required int? activityId,
+    required DateTime started,
+    required Duration timeSpent,
+  });
 }

@@ -19,7 +19,7 @@ class RedmineService implements Service {
     final project = await _redmineApi.fetchProject(projectId);
     return ProjectModel(
       id: project.id,
-      timeEntryActivities: project.timeEntryActivities,
+      workLogActivities: project.timeEntryActivities,
     );
   }
 
@@ -64,6 +64,15 @@ class RedmineService implements Service {
   }
 
   @override
+  Future<IssueModel> fetchIssue(int issueId) async {
+    final issue = await _redmineApi.fetchIssue(
+      issueId,
+      extensions: const IListConst(IssueExtensions.values),
+    );
+    return issue.toModel();
+  }
+
+  @override
   Future<IList<WorkLogModel>> fetchWorkLogs({Date? spentFrom, Date? spentTo, int? issueId}) async {
     final timeEntries = await Providers.fetchAll((limit, offset) async {
       return await _redmineApi.fetchTimeEntries(
@@ -89,32 +98,39 @@ class RedmineService implements Service {
   }
 
   @override
-  Future<IssueModel> fetchIssue(int issueId) async {
-    final issue = await _redmineApi.fetchIssue(
-      issueId,
-      extensions: const IListConst(IssueExtensions.values),
+  Future<void> createWorkLog({
+    required int issueId,
+    required int? activityId,
+    required DateTime started,
+    required Duration timeSpent,
+  }) async {
+    await _redmineApi.createTimeEntry(
+      issueId: issueId,
+      activityId: activityId,
+      date: started,
+      duration: timeSpent,
     );
-    return issue.toModel();
   }
 }
 
 extension on IssueDto {
   IssueModel toModel() {
     return IssueModel(
-        id: id,
-        project: project,
-        parentId: parentId,
-        hrefUrl: hrefUrl,
-        status: status,
-        author: author,
-        assignedTo: assignedTo,
-        closedOn: closedOn,
-        dueDate: dueDate,
-        subject: subject,
-        description: description,
-        attachments: attachments,
-        journals: journals,
-        children: children.map((e) => e.toModel()).toIList());
+      id: id,
+      project: project,
+      parentId: parentId,
+      hrefUrl: hrefUrl,
+      status: status,
+      author: author,
+      assignedTo: assignedTo,
+      closedOn: closedOn,
+      dueDate: dueDate,
+      subject: subject,
+      description: description,
+      attachments: attachments.map((e) => e.toModel()).toIList(),
+      journals: journals,
+      children: children.map((e) => e.toModel()).toIList(),
+    );
   }
 }
 
@@ -124,6 +140,17 @@ extension on IssueChildDto {
       id: id,
       subject: subject,
       children: children.map((e) => e.toModel()).toIList(),
+    );
+  }
+}
+
+extension on AttachmentDto {
+  AttachmentModel toModel() {
+    return AttachmentModel(
+      filename: filename,
+      mimeType: contentType,
+      thumbnailUrl: null,
+      contentUrl: hrefUrl,
     );
   }
 }

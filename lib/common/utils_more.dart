@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_api.dart';
-import 'package:hasd/apis/redmine/redmine_dto.dart';
+import 'package:hasd/models/models.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
 import 'package:mekart/mekart.dart';
@@ -36,8 +36,8 @@ const List<String> _wordMimeTypes = [
   'application/vnd.ms-powerpoint.slideshow.macroEnabled.12', // .ppsm
   'application/vnd.ms-access', // .mdb
 ];
-Future<void> launchFileWebView(BuildContext context, AttachmentDto attachment) async {
-  if (_wordMimeTypes.contains(attachment.contentType)) {
+Future<void> launchFileWebView(BuildContext context, AttachmentModel attachment) async {
+  if (_wordMimeTypes.contains(attachment.mimeType)) {
     final uri = Uri.parse(attachment.contentUrl);
     final officeUri = Uri.parse('https://view.officeapps.live.com/op/view.aspx');
     final fileUri = officeUri.replace(queryParameters: {
@@ -46,7 +46,7 @@ Future<void> launchFileWebView(BuildContext context, AttachmentDto attachment) a
     });
     await launchUrl(fileUri);
   } else {
-    await launchUrl(Uri.parse(attachment.hrefUrl));
+    await launchUrl(Uri.parse(attachment.contentUrl));
   }
 }
 

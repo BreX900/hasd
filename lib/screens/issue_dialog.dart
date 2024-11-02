@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/redmine/redmine_serializable.dart';
@@ -70,7 +71,6 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     validator: const RequiredValidation(),
   );
   late final _timeForm = ListFieldsBloc(fieldBlocs: [
-    _timeActivityFieldBloc,
     _timeDateFieldBloc,
     _timeDurationFieldBloc,
   ]);
@@ -93,9 +93,13 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     _infoFieldBloc.updateValue(settings.info);
     _assignedToFieldBloc.updateValue(issue.assignedTo);
 
-    _timeActivityFieldBloc.updateValue(project.timeEntryActivities.firstWhereOrNull((e) {
-      return e.id == appSettings.defaultTimeActivity;
-    }));
+    final workLogActivities = project.workLogActivities;
+    if (workLogActivities != null) {
+      _timeActivityFieldBloc.updateValue(workLogActivities.firstWhereOrNull((e) {
+        return e.id == appSettings.defaultTimeActivity;
+      }));
+      _timeForm.addFieldBlocs([_timeActivityFieldBloc]);
+    }
 
     _blockedByFieldBloc.updateValue(settings.blockedBy);
     _docsInFieldBloc.updateValue(settings.docsIn);
@@ -131,7 +135,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     await Providers.addIssueTime(
       ref,
       issue: issue,
-      activity: _timeActivityFieldBloc.state.value!,
+      activity: _timeActivityFieldBloc.state.value,
       date: _timeDateFieldBloc.state.value,
       duration: _timeDurationFieldBloc.state.value!,
     );
@@ -188,7 +192,10 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
         ),
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Text(issue.description.trim()),
+          child: MarkdownBody(
+            onTapLink: (_, href, ___) => launchUrl(Uri.parse(href!)),
+            data: '${issue.description}',
+          ),
         ),
       ],
     );
@@ -311,6 +318,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
         )
       ],
     );
+    final workLogActivities = project.workLogActivities;
     final spentTimesTab = Column(
       children: [
         Expanded(
@@ -331,18 +339,19 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Row(
             children: [
-              Expanded(
-                child: FieldDropdown(
-                  fieldBloc: _timeActivityFieldBloc,
-                  decoration: const InputDecoration(labelText: 'Activity'),
-                  items: project.timeEntryActivities.map((e) {
-                    return DropdownMenuItem(
-                      value: e,
-                      child: Text(e.name),
-                    );
-                  }).toList(),
+              if (workLogActivities != null)
+                Expanded(
+                  child: FieldDropdown(
+                    fieldBloc: _timeActivityFieldBloc,
+                    decoration: const InputDecoration(labelText: 'Activity'),
+                    items: workLogActivities.map((e) {
+                      return DropdownMenuItem(
+                        value: e,
+                        child: Text(e.name),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
               Expanded(
                 child: FieldDateTime(
                   fieldBloc: _timeDateFieldBloc,
