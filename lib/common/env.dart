@@ -1,5 +1,5 @@
 abstract final class Env {
-  static const String youtrackApiUrl = String.fromEnvironment('YOUTRACK_API_TOKEN');
+  static const String youtrackApiUrl = String.fromEnvironment('YOUTRACK_API_URL');
   static const String youtrackApiToken = String.fromEnvironment('YOUTRACK_API_TOKEN');
 
   static const String redmineApiKey = String.fromEnvironment('REDMINE_API_KEY');

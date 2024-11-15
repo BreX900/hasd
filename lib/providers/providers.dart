@@ -85,7 +85,7 @@ abstract final class Providers {
     required IssueModel issue,
     required Reference? activity,
     required DateTime date,
-    required Duration duration,
+    required WorkDuration duration,
   }) async {
     date = DateTime.utc(date.year, date.month, date.day);
     final appSettings = await ref.read(Providers.settings.future);
@@ -96,9 +96,9 @@ abstract final class Providers {
       started: date,
       timeSpent: duration,
     );
-    await YoutrackApi.instance?.createIssueWorkItem(
+    await YoutrackApi.instance!.createIssueWorkItem(
       appSettings.youtrackIssueId,
-      IssueWorkItemDto(
+      IssueWorkItemCreateDto(
         date: date,
         duration: DurationValueDto(minutes: duration.inMinutes),
         text: issue.hrefUrl,

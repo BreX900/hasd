@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_api.dart';
 import 'package:hasd/models/models.dart';
 import 'package:intl/intl.dart';
-import 'package:mek/mek.dart';
-import 'package:mekart/mekart.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -51,7 +49,7 @@ Future<void> launchFileWebView(BuildContext context, AttachmentModel attachment)
   }
 }
 
-String formatDuration(Duration source) {
+String formatWorkDuration(WorkDuration source) {
   final text = '${source.hours}h ${source.minutes}m';
   if (source.inDays == 0) return text;
 
@@ -84,36 +82,36 @@ extension WidgetAsyncValue<T> on AsyncValue<T> {
   }
 }
 
-class HoursFieldConverter extends FieldConvert<Duration> {
-  const HoursFieldConverter();
+// class HoursFieldConverter extends FieldConvert<Duration> {
+//   const HoursFieldConverter();
+//
+//   @override
+//   String toText(Duration? value) => value != null ? formatDuration(value) : '';
+//
+//   @override
+//   Duration? toValue(String text) {
+//     final regExp = RegExp(r'^ *(?:(\d+)d)? *?(?:(\d+)h)? *?(?:(\d+)m)? *$');
+//     final match = regExp.matchAsPrefix(text);
+//     if (match == null) return null;
+//
+//     final days = match.group(1);
+//     final hours = match.group(2);
+//     final minutes = match.group(3);
+//
+//     return Duration(
+//       hours: (hours != null ? int.parse(hours) : 0) + (days != null ? int.parse(days) * 8 : 0),
+//       minutes: minutes != null ? int.parse(minutes) : 0,
+//     );
+//   }
+// }
+
+class ControlWorkDurationAccessor extends ControlValueAccessor<WorkDuration, String> {
+  @override
+  String? modelToViewValue(WorkDuration? modelValue) =>
+      modelValue != null ? formatWorkDuration(modelValue) : '';
 
   @override
-  String toText(Duration? value) => value != null ? formatDuration(value) : '';
-
-  @override
-  Duration? toValue(String text) {
-    final regExp = RegExp(r'^ *(?:(\d+)d)? *?(?:(\d+)h)? *?(?:(\d+)m)? *$');
-    final match = regExp.matchAsPrefix(text);
-    if (match == null) return null;
-
-    final days = match.group(1);
-    final hours = match.group(2);
-    final minutes = match.group(3);
-
-    return Duration(
-      hours: (hours != null ? int.parse(hours) : 0) + (days != null ? int.parse(days) * 8 : 0),
-      minutes: minutes != null ? int.parse(minutes) : 0,
-    );
-  }
-}
-
-class ControlHoursAccessor extends ControlValueAccessor<Duration, String> {
-  @override
-  String? modelToViewValue(Duration? modelValue) =>
-      modelValue != null ? formatDuration(modelValue) : '';
-
-  @override
-  Duration? viewToModelValue(String? viewValue) {
+  WorkDuration? viewToModelValue(String? viewValue) {
     if (viewValue == null) return null;
 
     final regExp = RegExp(r'^ *(?:(\d+)d)? *?(?:(\d+)h)? *?(?:(\d+)m)? *$');
@@ -124,7 +122,7 @@ class ControlHoursAccessor extends ControlValueAccessor<Duration, String> {
     final hours = match.group(2);
     final minutes = match.group(3);
 
-    return Duration(
+    return WorkDuration(
       hours: (hours != null ? int.parse(hours) : 0) + (days != null ? int.parse(days) * 8 : 0),
       minutes: minutes != null ? int.parse(minutes) : 0,
     );

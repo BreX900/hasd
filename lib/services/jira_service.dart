@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/jira/jira_api.dart';
@@ -16,6 +17,7 @@ class JiraService implements Service {
 
   const JiraService._();
 
+  @override
   Map<String, String> get authorizationHeaders => _jiraApi.authorizationHeaders;
 
   @override
@@ -23,7 +25,7 @@ class JiraService implements Service {
     final project = await _jiraApi.fetchProject(IdOrUid.id(projectId));
     return ProjectModel(
       id: project.id,
-      workLogActivities: const IList.empty(),
+      workLogActivities: null,
     );
   }
 
@@ -46,7 +48,10 @@ class JiraService implements Service {
   @override
   Future<IList<IssueModel>> fetchIssues() async {
     final issues = await _jiraApi.searchIssues(
-      jql: JqlFilter('project', equalTo: 'TN'),
+      jql: JqlExpression.and([
+        JqlFilter(JiraIssueFields.project, equalTo: 'TN'),
+        JqlFilter(JiraIssueFields.parent, equalTo: '16494'),
+      ]),
       orderBy: 'created',
       descending: true,
     );
@@ -73,7 +78,7 @@ class JiraService implements Service {
         author: workLog.author.displayName,
         spentOn: workLog.started.asDate(),
         timeSpent: workLog.timeSpent,
-        activity: '',
+        activity: null,
         comments: jsonEncode(workLog.comment),
       );
     }).toIList();
@@ -84,13 +89,39 @@ class JiraService implements Service {
     required int issueId,
     required int? activityId,
     required DateTime started,
-    required Duration timeSpent,
+    required WorkDuration timeSpent,
   }) async {
-    final data = JiraWorkLogCreateDto(
+    await createWorkLogV2(
+      issueIdOrUid: IdOrUid.id(issueId),
+      activityId: activityId,
       started: started,
       timeSpent: timeSpent,
     );
-    await _jiraApi.createWorkLog(IdOrUid.id(issueId), data);
+  }
+
+  Future<void> createWorkLogV2({
+    required IdOrUid issueIdOrUid,
+    required int? activityId,
+    required DateTime started,
+    required WorkDuration timeSpent,
+  }) async {
+    final issue = await _jiraApi.fetchIssue(issueIdOrUid);
+    final remainingEstimate = issue.timeTracking.remainingEstimate ?? WorkDuration.zero;
+    final newEstimate = remainingEstimate - timeSpent;
+    final data = JiraWorkLogCreateDto(
+      started: started
+          .copyWith(minute: 0, second: 0, microsecond: 0, millisecond: 0)
+          .toLocal()
+          .copyWith(hour: 9)
+          .toUtc(),
+      timeSpent: timeSpent,
+    );
+
+    await _jiraApi.createWorkLog(
+      issueIdOrUid,
+      newEstimate: WorkDuration(seconds: max(newEstimate.inSeconds, 0)),
+      data: data,
+    );
   }
 }
 

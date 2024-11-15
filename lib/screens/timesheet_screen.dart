@@ -60,7 +60,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
       cellBuilder: (context, data, dateTime) {
         dateTime = dateTime.withoutTime();
         final times = monthTimes.where((e) => e.spentOn == dateTime.asDate());
-        final totalTime = times.fold(Duration.zero, (total, e) => total + e.timeSpent);
+        final totalTime = times.fold(WorkDuration.zero, (total, e) => total + e.timeSpent);
 
         final entries = times.map((time) {
           return FlatListTile(
@@ -69,7 +69,7 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
               context: context,
               builder: (context) => IssueDialog(issueId: time.issueId),
             ),
-            title: Text('${formatDuration(time.timeSpent)} ${time.activity}'),
+            title: Text('${formatWorkDuration(time.timeSpent)} ${time.activity}'),
             subtitle: Text('#${time.issueId}'),
           );
         }).toList();
@@ -80,7 +80,8 @@ class _TimesheetScreenState extends ConsumerState<TimesheetScreen> {
             children: [
               FlatListTile(
                 title: Text(dayFormat.format(dateTime), style: textTheme.titleSmall),
-                trailing: totalTime > Duration.zero ? Text(formatDuration(totalTime)) : null,
+                trailing:
+                    totalTime > WorkDuration.zero ? Text(formatWorkDuration(totalTime)) : null,
               ),
               Expanded(
                 child: ListView(

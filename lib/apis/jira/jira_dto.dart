@@ -1,19 +1,122 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/jira/jira_markup_dto.dart';
+import 'package:hasd/models/models.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:mek_data_class/mek_data_class.dart';
+import 'package:mekart/mekart.dart';
 
 part '../../generated/apis/jira/jira_dto.g.dart';
+
+const jiraConverters = <TypedJsonConverter>[DurationInSecondsConverter(), DateTimeConverter()];
 
 class JiraSerializable extends JsonSerializable {
   const JiraSerializable({
     super.createFactory,
     super.createToJson,
     super.disallowUnrecognizedKeys,
-  }) : super(converters: const [DurationInSecondsConverter()]);
+  }) : super(converters: jiraConverters);
 }
 
-class DurationInSecondsConverter extends JsonConverter<Duration, int> {
+abstract class TypedJsonConverter<T extends Object, S> extends JsonConverter<T, S> {
+  const TypedJsonConverter();
+
+  bool accept(Object object) => object is T;
+}
+
+extension JsonConverters on List<TypedJsonConverter> {
+  Map<String, Object?> encodeJson(Map<String, Object?> json) {
+    return json.map((key, value) => MapEntry(key, _encodeJsonValue(value)));
+  }
+
+  Map<String, String> encodeQueryParameters(Map<String, Object?> queryParameters) {
+    return Map.fromEntries(queryParameters.entries.mapTo((key, value) {
+      final encodedValue = _encodeQueryParametersValue(value);
+      if (encodedValue == null) return null;
+      return MapEntry(key, encodedValue);
+    }).nonNulls);
+  }
+
+  Object? _encodeJsonValue(Object? value) {
+    if (value == null) return null;
+    for (final converter in this) {
+      if (converter.accept(value)) return converter.toJson(value);
+    }
+    if (value is IList) return value.toJson(_encodeJsonValue);
+    if (value is ISet) return value.toJson(_encodeJsonValue);
+    if (value is IMap) return value.toJson(_encodeJsonValue, _encodeJsonValue);
+    return value;
+  }
+
+  String? _encodeQueryParametersValue(Object? value) {
+    if (value == null) return null;
+    for (final converter in this) {
+      if (converter.accept(value)) return '${converter.toJson(value)}';
+    }
+    if (value is bool) return '$value';
+    if (value is num) return '$value';
+    try {
+      // ignore: avoid_dynamic_calls
+      return (value as dynamic).toJson();
+    } catch (_) {
+      return value as String?;
+    }
+  }
+}
+
+class DateTimeConverter extends TypedJsonConverter<DateTime, String> {
+  const DateTimeConverter();
+  @override
+  DateTime fromJson(String json) => DateTime.parse(json);
+
+  @override
+  String toJson(DateTime object) {
+    final y = (object.year >= -9999 && object.year <= 9999)
+        ? _fourDigits(object.year)
+        : _sixDigits(object.year);
+    final m = _twoDigits(object.month);
+    final d = _twoDigits(object.day);
+    final h = _twoDigits(object.hour);
+    final min = _twoDigits(object.minute);
+    final sec = _twoDigits(object.second);
+    final ms = _threeDigits(object.millisecond);
+
+    final tzs = object.timeZoneOffset >= Duration.zero ? '+' : '-';
+    final tzh = _twoDigits(object.timeZoneOffset.inHours.abs());
+    final tzm = _twoDigits(object.timeZoneOffset.inMinutes.abs());
+
+    return '$y-$m-${d}T$h:$min:$sec.$ms$tzs$tzh$tzm';
+  }
+
+  static String _fourDigits(int n) {
+    final absN = n.abs();
+    final sign = n < 0 ? '-' : '';
+    if (absN >= 1000) return '$n';
+    if (absN >= 100) return '${sign}0$absN';
+    if (absN >= 10) return '${sign}00$absN';
+    return '${sign}000$absN';
+  }
+
+  static String _sixDigits(int n) {
+    assert(n < -9999 || n > 9999);
+    final absN = n.abs();
+    final sign = n < 0 ? '-' : '+';
+    if (absN >= 100000) return '$sign$absN';
+    return '${sign}0$absN';
+  }
+
+  static String _threeDigits(int n) {
+    if (n >= 100) return '$n';
+    if (n >= 10) return '0$n';
+    return '00$n';
+  }
+
+  static String _twoDigits(int n) {
+    if (n >= 10) return '$n';
+    return '0$n';
+  }
+}
+
+class DurationInSecondsConverter extends TypedJsonConverter<Duration, int> {
   const DurationInSecondsConverter();
   @override
   Duration fromJson(int json) => Duration(seconds: json);
@@ -110,7 +213,7 @@ class JiraProjectDto with _$JiraProjectDto {
 
 @DataClass()
 @JiraSerializable(createFactory: true)
-class JiraProjectRoleDto with _$JiraProjectDto {
+class JiraProjectRoleDto with _$JiraProjectRoleDto {
   @JsonKey(fromJson: int.parse)
   final int id;
   final String name;
@@ -137,8 +240,9 @@ class JiraIssueDto with _$JiraIssueDto {
   final UserDto creator;
   final String summary;
   final JiraMarkupDto? description;
-  // @JsonKey(defaultValue: IList<JiraAttachmentDto>.empty)
   final IList<JiraAttachmentDto> attachment;
+  @JsonKey(name: 'timetracking')
+  final JiraTimeTracking timeTracking;
 
   const JiraIssueDto({
     required this.id,
@@ -150,6 +254,7 @@ class JiraIssueDto with _$JiraIssueDto {
     required this.summary,
     required this.description,
     required this.attachment,
+    required this.timeTracking,
   });
 
   // static Object? _readFromFields(Map data, String key) =>
@@ -183,6 +288,21 @@ class JiraAttachmentDto {
   factory JiraAttachmentDto.fromJson(Map<String, dynamic> map) => _$JiraAttachmentDtoFromJson(map);
 }
 
+@JiraSerializable(createFactory: true)
+class JiraTimeTracking {
+  @JsonKey(name: 'originalEstimateSeconds')
+  final WorkDuration? originalEstimate;
+  @JsonKey(name: 'remainingEstimateSeconds')
+  final WorkDuration? remainingEstimate;
+
+  const JiraTimeTracking({
+    required this.originalEstimate,
+    required this.remainingEstimate,
+  });
+
+  factory JiraTimeTracking.fromJson(Map<String, dynamic> map) => _$JiraTimeTrackingFromJson(map);
+}
+
 @DataClass()
 @JiraSerializable(createFactory: true)
 class JiraWorkLogDto with _$JiraWorkLogDto {
@@ -195,8 +315,8 @@ class JiraWorkLogDto with _$JiraWorkLogDto {
   final DateTime created;
   final DateTime updated;
   final DateTime started;
-  @JsonKey(name: 'timeSpentSeconds', fromJson: _durationFromSeconds)
-  final Duration timeSpent;
+  @JsonKey(name: 'timeSpentSeconds')
+  final WorkDuration timeSpent;
   final Map<String, dynamic>? comment;
 
   const JiraWorkLogDto({
@@ -211,15 +331,14 @@ class JiraWorkLogDto with _$JiraWorkLogDto {
     required this.comment,
   });
 
-  static Duration _durationFromSeconds(int seconds) => Duration(seconds: seconds);
-
   factory JiraWorkLogDto.fromJson(Map<String, dynamic> map) => _$JiraWorkLogDtoFromJson(map);
 }
 
 @JiraSerializable(createToJson: true)
 class JiraWorkLogCreateDto {
   final DateTime started;
-  final Duration timeSpent;
+  @JsonKey(name: 'timeSpentSeconds')
+  final WorkDuration timeSpent;
 
   const JiraWorkLogCreateDto({
     required this.started,

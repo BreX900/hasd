@@ -31,6 +31,7 @@ class AppDrawer extends ConsumerStatefulWidget {
 class _AppDrawerState extends ConsumerState<AppDrawer> {
   final _redmineApiKeyFieldBloc = FormControl<String>(
     validators: [Validators.required],
+    disabled: true,
   );
 
   final _statuesFieldBloc = FormControl<ISet<Reference>>();
@@ -81,12 +82,13 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
         children: [
           const SizedBox(height: 32.0),
           Text('Easy Redmine', style: textTheme.headlineLarge),
-          TypedReactiveTextField(
+          ReactiveTypedTextField(
             formControl: _redmineApiKeyFieldBloc,
             type: const TextFieldType.secret(),
+            readOnly: false,
             decoration: InputDecoration(
               labelText: 'Api Key',
-              suffixIcon: EditFieldButton(
+              suffixIcon: ReactiveEditButton(
                 toggleableObscureText: true,
                 onSubmit: () async {
                   await Providers.settingsBin.update((data) {
@@ -130,12 +132,12 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
           ),
           const SizedBox(height: 32.0),
           Text('Youtrack', style: textTheme.headlineLarge),
-          TypedReactiveTextField(
+          ReactiveTypedTextField(
             formControl: _youtrackApiTokenFieldBloc,
             type: const TextFieldType.secret(),
             decoration: InputDecoration(
               labelText: 'Api Token',
-              suffixIcon: EditFieldButton(
+              suffixIcon: ReactiveEditButton(
                 toggleableObscureText: true,
                 onSubmit: () async {
                   await Providers.settingsBin.update((data) {
@@ -147,12 +149,11 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
               ),
             ),
           ),
-          TypedReactiveTextField(
+          ReactiveTypedTextField(
             formControl: _youtrackIssueIdBloc,
-            readOnly: true,
             decoration: InputDecoration(
               labelText: 'Issue for spent time',
-              suffixIcon: EditFieldButton(
+              suffixIcon: ReactiveEditButton(
                 onSubmit: () async {
                   await Providers.settingsBin.update((data) {
                     return data.change((c) => c.youtrackIssueId = _youtrackIssueIdBloc.value!);

@@ -21,7 +21,8 @@ enum JiraMarkupType {
   listItem,
   inlineCard,
   codeBlock,
-  heading;
+  heading,
+  blockquote;
 
   factory JiraMarkupType.fromJson(String source) => $enumDecode(_$JiraMarkupTypeEnumMap, source);
 }
@@ -48,6 +49,7 @@ sealed class JiraMarkupDto {
       JiraMarkupType.inlineCard => JiraMarkupInlineCardDto.fromJson(data),
       JiraMarkupType.codeBlock => JiraMarkupCodeBlockDto.fromJson(data),
       JiraMarkupType.heading => JiraMarkupHeadingDto.fromJson(data),
+      JiraMarkupType.blockquote => const JiraMarkupHardBreakDto(),
     };
   }
 }
@@ -77,10 +79,13 @@ class JiraMarkupParagraphDto extends JiraMarkupDto {
 
 @JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
 class JiraMarkupDocDto extends JiraMarkupDto {
-  final int version;
+  final int? version;
   final IList<JiraMarkupDto> content;
 
-  const JiraMarkupDocDto({required this.version, required this.content});
+  const JiraMarkupDocDto({
+    required this.version,
+    required this.content,
+  });
 
   factory JiraMarkupDocDto.fromJson(Map<String, dynamic> map) => _$JiraMarkupDocDtoFromJson(map);
 }
@@ -209,9 +214,10 @@ class JiraMarkupInlineCardDto extends JiraMarkupDto {
 
 @JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
 class JiraMarkupCodeBlockDto extends JiraMarkupDto {
+  final String? language;
   final IList<JiraMarkupDto> content;
 
-  const JiraMarkupCodeBlockDto({required this.content});
+  const JiraMarkupCodeBlockDto({required this.language, required this.content});
 
   factory JiraMarkupCodeBlockDto.fromJson(Map<String, dynamic> map) =>
       _$JiraMarkupCodeBlockDtoFromJson(map.up('attrs'));

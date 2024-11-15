@@ -6,7 +6,7 @@ import 'package:hasd/apis/jira/jira_dto.dart';
 import 'package:hasd/common/env.dart';
 import 'package:hasd/models/models.dart';
 
-class JqlSpec {}
+sealed class JqlSpec {}
 
 class JqlFilter implements JqlSpec {
   final String field;
@@ -21,7 +21,21 @@ class JqlFilter implements JqlSpec {
   String toString() => '$field $operator "$value"';
 }
 
-class JqlExpression implements JqlSpec {}
+class JqlExpression implements JqlSpec {
+  final List<JqlSpec> children;
+  final String operator;
+
+  const JqlExpression.and(this.children) : operator = 'AND';
+  const JqlExpression.or(this.children) : operator = 'OR';
+
+  @override
+  String toString() => '(${children.join(' $operator ')})';
+}
+
+abstract final class JiraIssueFields {
+  static const String project = 'project';
+  static const String parent = 'parent';
+}
 
 // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/#api-rest-api-3-search-get
 class JiraApi {
@@ -33,6 +47,7 @@ class JiraApi {
     headers: {
       ...authorizationHeaders,
       Headers.contentTypeHeader: Headers.jsonContentType,
+      Headers.acceptHeader: Headers.jsonContentType,
     },
   ));
 
@@ -139,6 +154,7 @@ class JiraApi {
         await httpClient.get<Map<String, dynamic>>('/3/worklog/updated', queryParameters: {
       if (since != null) 'since': since.millisecondsSinceEpoch,
     });
+
     final values = response.data!['values'] as List<dynamic>;
     return values.map((data) {
       data as Map<String, dynamic>;
@@ -146,7 +162,14 @@ class JiraApi {
     }).toIList();
   }
 
-  Future<void> createWorkLog(IdOrUid issueIdOrKey, JiraWorkLogCreateDto data) async {
-    await httpClient.post('/3/issue/$issueIdOrKey/worklog', data: data);
+  Future<void> createWorkLog(
+    IdOrUid issueIdOrKey, {
+    required WorkDuration newEstimate,
+    required JiraWorkLogCreateDto data,
+  }) async {
+    await httpClient.post<void>('/3/issue/$issueIdOrKey/worklog', data: data, queryParameters: {
+      'adjustEstimate': 'new',
+      'newEstimate': '${newEstimate.inMinutes}m',
+    });
   }
 }

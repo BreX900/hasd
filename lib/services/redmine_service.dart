@@ -93,7 +93,7 @@ class RedmineService implements Service {
         issueId: timeEntry.entityId,
         author: timeEntry.user.name,
         spentOn: timeEntry.spentOn,
-        timeSpent: timeEntry.hours,
+        timeSpent: timeEntry.hours.workDuration,
         activity: timeEntry.activity.name,
         comments: timeEntry.comments,
       );
@@ -105,13 +105,13 @@ class RedmineService implements Service {
     required int issueId,
     required int? activityId,
     required DateTime started,
-    required Duration timeSpent,
+    required WorkDuration timeSpent,
   }) async {
     await _redmineApi.createTimeEntry(
       issueId: issueId,
       activityId: activityId,
       date: started,
-      duration: timeSpent,
+      duration: timeSpent.duration,
     );
   }
 }

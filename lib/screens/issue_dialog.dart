@@ -67,7 +67,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
   final _timeDateFieldBloc = FormControl<DateTime>(
     value: DateTime.now(),
   );
-  final _timeDurationFieldBloc = FormControl<Duration>(
+  final _timeDurationFieldBloc = FormControl<WorkDuration>(
     validators: [Validators.required],
   );
   late final _timeForm = FormArray([_timeDateFieldBloc, _timeDurationFieldBloc]);
@@ -179,10 +179,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
           formControl: _infoFieldBloc,
           decoration: InputDecoration(
             labelText: 'Personal Info',
-            suffixIcon: ReactiveSaveFieldButton(
-              formControl: _infoFieldBloc,
-              onSubmit: () async => _saveInfo(issue),
-            ),
+            suffixIcon: ReactiveSaveButton(onSubmit: () async => _saveInfo(issue)),
           ),
         ),
         Padding(
@@ -227,10 +224,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
           formControl: _statusFieldBloc,
           decoration: InputDecoration(
             labelText: 'Status',
-            suffixIcon: ReactiveSaveFieldButton(
-              formControl: _statusFieldBloc,
-              onSubmit: () async => _saveStatus(issue),
-            ),
+            suffixIcon: ReactiveSaveButton(onSubmit: () async => _saveStatus(issue)),
           ),
           items: issueStatutes.map((value) {
             return DropdownMenuItem(
@@ -259,10 +253,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
             focusNode: field.focusNode,
             decoration: InputDecoration(
               labelText: 'Assigned to',
-              suffixIcon: ReactiveSaveFieldButton(
-                formControl: _assignedToFieldBloc,
-                onSubmit: () async => _saveAssignedTo(issue),
-              ),
+              suffixIcon: ReactiveSaveButton(onSubmit: () async => _saveAssignedTo(issue)),
             ),
           ),
         ),
@@ -331,8 +322,9 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
               final time = times[index];
 
               return ListTile(
-                title: Text('${time.spentOn} ${time.author}: ${formatDuration(time.timeSpent)}'),
-                subtitle: Text('${time.activity} ${time.comments}'),
+                title:
+                    Text('${time.spentOn} ${time.author}: ${formatWorkDuration(time.timeSpent)}'),
+                subtitle: Text('${time.activity ?? ''} ${time.comments}'),
               );
             },
           ),
@@ -341,7 +333,8 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Row(
             children: [
-              if (workLogActivities != null)
+              const SizedBox(width: 16.0),
+              if (workLogActivities != null) ...[
                 Expanded(
                   child: ReactiveDropdownField(
                     formControl: _timeActivityFieldBloc,
@@ -354,6 +347,8 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
                     }).toList(),
                   ),
                 ),
+                const SizedBox(width: 8.0),
+              ],
               Expanded(
                 child: ReactiveDateTimeField(
                   formControl: _timeDateFieldBloc,
@@ -362,12 +357,13 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
                   picker: const DateTimePicker.date(),
                 ),
               ),
+              const SizedBox(width: 8.0),
               Expanded(
-                child: TypedReactiveTextField<Duration>(
+                child: ReactiveTypedTextField<WorkDuration>(
                   formControl: _timeDurationFieldBloc,
-                  valueAccessor: ControlHoursAccessor(),
+                  valueAccessor: ControlWorkDurationAccessor(),
                   decoration: InputDecoration(
-                    labelText: 'Spent time: ${formatDuration(spentTime ?? Duration.zero)}',
+                    labelText: 'Spent time: ${formatWorkDuration(spentTime ?? WorkDuration.zero)}',
                     suffixIcon: IconButton(
                       onPressed: () => addIssueTime(issue),
                       icon: const Icon(Icons.save),
@@ -375,6 +371,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
                   ),
                 ),
               ),
+              const SizedBox(width: 16.0),
             ],
           ),
         ),
@@ -391,7 +388,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
             JournalDetailDto.estimatedHours => Builder(builder: (context) {
                 String format(String? value) {
                   if (value == null) return '---';
-                  return formatDuration(HoursConverter.parse(value));
+                  return formatWorkDuration(HoursConverter.parse(value).workDuration);
                 }
 
                 final oldValue = format(detail.oldValue);

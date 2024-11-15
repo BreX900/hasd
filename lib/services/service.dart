@@ -25,6 +25,6 @@ abstract interface class Service {
     required int issueId,
     required int? activityId,
     required DateTime started,
-    required Duration timeSpent,
+    required WorkDuration timeSpent,
   });
 }

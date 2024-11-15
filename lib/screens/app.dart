@@ -2,10 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hasd/apis/redmine/redmine_api.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/youtrack/youtrack_api.dart';
-import 'package:hasd/common/env.dart';
 import 'package:hasd/common/t.dart';
 import 'package:hasd/providers/providers.dart';
 import 'package:hasd/redmine/dashboard_screen.dart';
@@ -54,11 +52,10 @@ class MainAppState extends ConsumerState<App> with WindowListener {
   }
 
   void _init(AppSettings settings) {
-    return;
-    final hasCredentials = settings.apiKey.isNotEmpty;
-    if (_hasCredentials != hasCredentials) setState(() => _hasCredentials = hasCredentials);
-    if (settings.apiKey.isEmpty) return;
-    RedmineApi.instance = RedmineApi(settings.apiKey, Env.redmineApiUrl);
+    // final hasCredentials = settings.apiKey.isNotEmpty;
+    // if (_hasCredentials != hasCredentials) setState(() => _hasCredentials = hasCredentials);
+    // if (settings.apiKey.isEmpty) return;
+    // RedmineApi.instance = RedmineApi(settings.apiKey, Env.redmineApiUrl);
     YoutrackApi.instance =
         settings.youtrackApiKey.isNotEmpty ? YoutrackApi(settings.youtrackApiKey) : null;
   }

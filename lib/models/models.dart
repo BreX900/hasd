@@ -23,6 +23,50 @@ class IdOrUid {
   int get hashCode => value.hashCode;
 }
 
+class WorkDuration {
+  static const int secondsPerMinute = 60;
+  static const int minutesPerHour = 60;
+  static const int hoursPerDay = 8;
+
+  final int _value;
+
+  const WorkDuration({int days = 0, int hours = 0, int minutes = 0, int seconds = 0})
+      : _value =
+            ((days * hoursPerDay + hours) * minutesPerHour + minutes) * secondsPerMinute + seconds;
+
+  const WorkDuration._(this._value);
+
+  static const WorkDuration zero = WorkDuration._(0);
+
+  int get inSeconds => _value;
+  int get inMinutes => inSeconds ~/ secondsPerMinute;
+  int get inHours => inMinutes ~/ minutesPerHour;
+  int get inDays => inHours ~/ hoursPerDay;
+
+  int get seconds => _value % secondsPerMinute;
+  int get minutes => inMinutes % minutesPerHour;
+  int get hours => inHours % hoursPerDay;
+  int get days => inDays;
+
+  WorkDuration operator -(WorkDuration other) => WorkDuration._(_value - other._value);
+  WorkDuration operator +(WorkDuration other) => WorkDuration._(_value + other._value);
+
+  bool operator >(WorkDuration other) => _value > other._value;
+  bool operator <(WorkDuration other) => _value < other._value;
+
+  Duration get duration => Duration(seconds: _value);
+
+  factory WorkDuration.fromJson(int value) => WorkDuration._(value);
+  int toJson() => _value;
+
+  @override
+  String toString() => '${days}d ${hours}h ${minutes}m ${seconds}s';
+}
+
+extension DurationWorkExtensions on Duration {
+  WorkDuration get workDuration => WorkDuration._(inSeconds);
+}
+
 class ProjectModel {
   final int id;
   final IList<Reference>? workLogActivities;
@@ -37,8 +81,8 @@ class WorkLogModel {
   final int issueId;
   final String author;
   final Date spentOn;
-  final Duration timeSpent;
-  final String activity;
+  final WorkDuration timeSpent;
+  final String? activity;
   final String comments;
 
   const WorkLogModel({
