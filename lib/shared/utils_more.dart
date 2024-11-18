@@ -82,29 +82,6 @@ extension WidgetAsyncValue<T> on AsyncValue<T> {
   }
 }
 
-// class HoursFieldConverter extends FieldConvert<Duration> {
-//   const HoursFieldConverter();
-//
-//   @override
-//   String toText(Duration? value) => value != null ? formatDuration(value) : '';
-//
-//   @override
-//   Duration? toValue(String text) {
-//     final regExp = RegExp(r'^ *(?:(\d+)d)? *?(?:(\d+)h)? *?(?:(\d+)m)? *$');
-//     final match = regExp.matchAsPrefix(text);
-//     if (match == null) return null;
-//
-//     final days = match.group(1);
-//     final hours = match.group(2);
-//     final minutes = match.group(3);
-//
-//     return Duration(
-//       hours: (hours != null ? int.parse(hours) : 0) + (days != null ? int.parse(days) * 8 : 0),
-//       minutes: minutes != null ? int.parse(minutes) : 0,
-//     );
-//   }
-// }
-
 class ControlWorkDurationAccessor extends ControlValueAccessor<WorkDuration, String> {
   @override
   String? modelToViewValue(WorkDuration? modelValue) =>

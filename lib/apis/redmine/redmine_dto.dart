@@ -1,6 +1,6 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/redmine/redmine_serializable.dart';
-import 'package:hasd/common/env.dart';
+import 'package:hasd/shared/env.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:mek_data_class/mek_data_class.dart';
 import 'package:mekart/mekart.dart';

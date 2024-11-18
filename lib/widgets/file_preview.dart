@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hasd/common/utils_more.dart';
 import 'package:hasd/services/service.dart';
+import 'package:hasd/shared/utils_more.dart';
 
 class FilePreview extends StatelessWidget {
   final String mimeType;
