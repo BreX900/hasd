@@ -17,17 +17,19 @@ class JiraMarkdownBuilder {
       JiraMarkupTextDto() => data.text,
       JiraMarkupParagraphDto() => data.content.map(resolve).join(),
       JiraMarkupDocDto() => data.content.map(resolve).join(),
-      JiraMarkupHardBreakDto() => '\n',
+      JiraMarkupHardBreakDto() => '\\\n',
       JiraMarkupMediaSingleDto() => data.content.map(resolve).join(),
       JiraMarkupMediaDto() => _resolveMedia(data),
       JiraMarkupMediaInlineDto() => throw UnimplementedError(),
-      JiraMarkupMentionDto() => data.text,
+      JiraMarkupMentionDto() => '@${data.text}',
       JiraMarkupOrderedListDto() =>
         data.content.mapIndexed((index, e) => '  ${index + 1}. ${resolve(e)}').join('\n'),
       JiraMarkupBulletListDto() => data.content.map((e) => '- ${resolve(e)}').join('\n'),
-      JiraMarkupListItemDto() => data.content.map(resolve).join(),
+      JiraMarkupListItemDto() =>
+        data.content.mapIndexed((index, e) => '  ${index + 1}. ${resolve(e)}').join('\n'),
       JiraMarkupInlineCardDto() => data.url,
-      JiraMarkupCodeBlockDto() => data.content.map(resolve).join(),
+      JiraMarkupCodeBlockDto() =>
+        '```${data.language ?? ''}\n${data.content.map(resolve).join('\n')}\n```',
       JiraMarkupHeadingDto() => data.content.map(resolve).join(),
     };
   }

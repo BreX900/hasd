@@ -11,7 +11,7 @@ import 'package:hasd/common/utils.dart';
 import 'package:hasd/common/utils_more.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/providers/providers.dart';
-import 'package:hasd/services/service.dart';
+import 'package:hasd/widget/file_preview.dart';
 import 'package:intl/intl.dart';
 import 'package:mek/mek.dart';
 import 'package:reactive_forms/reactive_forms.dart';
@@ -185,8 +185,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: MarkdownBody(
-            imageBuilder: (uri, _, __) =>
-                Image.network(uri.toString(), headers: Service.instance.authorizationHeaders),
+            imageBuilder: (uri, _, __) => FilePreview(uri.toString(), mimeType: 'image'),
             onTapLink: (_, href, ___) async => launchUrl(Uri.parse(href!)),
             data: '${issue.description}',
           ),
@@ -196,9 +195,9 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
     final rightSection = ListView(
       padding: const EdgeInsets.only(left: 8.0, right: 16.0),
       children: [
-        FieldText<int>.from(
-          value: issue.id,
-          converter: FieldConvert.integer,
+        FieldText<String>.from(
+          value: issue.key,
+          converter: FieldConvert.text,
           decoration: InputDecoration(
             labelText: 'Id',
             suffixIcon: PopupMenuButton(
@@ -212,7 +211,7 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
                   child: const ListTile(leading: Icon(Icons.link), title: Text('Copy Link')),
                 ),
                 PopupMenuItem(
-                  onTap: () async => Utils.setClipboard('${issue.id}'),
+                  onTap: () async => Utils.setClipboard(issue.key),
                   child: const ListTile(leading: Icon(Icons.copy), title: Text('Copy Id')),
                 ),
               ],
@@ -240,7 +239,6 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
         ),
         ReactiveTypeAheadField<Reference?>(
           formControl: _assignedToFieldBloc,
-          // toText: (value) => value?.name ?? '',
           debounceDuration: Duration.zero,
           suggestionsCallback: (text) => users.where((element) {
             return element.name.toLowerCase().contains(text.toLowerCase());
@@ -264,16 +262,14 @@ class _IssueDialogState extends ConsumerState<IssueDialog> {
         ),
         if (attachments.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2.0),
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Wrap(
-              spacing: 2.0,
-              runSpacing: 2.0,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              alignment: WrapAlignment.center,
+              spacing: 4.0,
+              runSpacing: 4.0,
               children: attachments.map((e) {
-                return InputChip(
-                  tooltip: e.filename,
-                  onPressed: () async => launchFileWebView(context, e),
-                  label: Text(e.filename),
-                );
+                return FilePreview(e.contentUrl, mimeType: e.mimeType);
               }).toList(),
             ),
           ),

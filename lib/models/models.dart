@@ -11,6 +11,9 @@ class IdOrUid {
   const IdOrUid.id(int this.value);
   const IdOrUid.uid(String this.value);
 
+  int get asInt => value as int;
+  String get asString => value as String;
+
   @override
   String toString() => '$value';
 
@@ -113,6 +116,7 @@ class IssueModel extends IssueChildModel {
 
   const IssueModel({
     required super.id,
+    required super.key,
     required this.project,
     required this.parentId,
     required this.hrefUrl,
@@ -131,11 +135,13 @@ class IssueModel extends IssueChildModel {
 
 class IssueChildModel {
   final int id;
+  final String key;
   final String subject;
   final IList<IssueChildModel> children;
 
   const IssueChildModel({
     required this.id,
+    required this.key,
     required this.subject,
     required this.children,
   });

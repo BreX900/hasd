@@ -35,9 +35,9 @@ const List<String> _wordMimeTypes = [
   'application/vnd.ms-powerpoint.slideshow.macroEnabled.12', // .ppsm
   'application/vnd.ms-access', // .mdb
 ];
-Future<void> launchFileWebView(BuildContext context, AttachmentModel attachment) async {
-  if (_wordMimeTypes.contains(attachment.mimeType)) {
-    final uri = Uri.parse(attachment.contentUrl);
+Future<void> launchFileWebView(BuildContext context, String mimeType, String url) async {
+  if (_wordMimeTypes.contains(mimeType)) {
+    final uri = Uri.parse(url);
     final officeUri = Uri.parse('https://view.officeapps.live.com/op/view.aspx');
     final fileUri = officeUri.replace(queryParameters: {
       'src': Service.instance.joinApiKey(uri).toString(),
@@ -45,7 +45,7 @@ Future<void> launchFileWebView(BuildContext context, AttachmentModel attachment)
     });
     await launchUrl(fileUri);
   } else {
-    await launchUrl(Uri.parse(attachment.contentUrl));
+    await launchUrl(Uri.parse(url));
   }
 }
 

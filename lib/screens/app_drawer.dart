@@ -293,7 +293,7 @@ class _YoutrackFormState extends ConsumerState<_YoutrackForm> {
 }
 
 class _JiraForm extends ConsumerStatefulWidget {
-  const _JiraForm({super.key});
+  const _JiraForm();
 
   @override
   ConsumerState<_JiraForm> createState() => _JiraFormState();

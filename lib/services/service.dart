@@ -10,6 +10,8 @@ abstract interface class Service {
 
   Uri joinApiKey(Uri uri) => uri;
 
+  Future<int> resolveIssueIdentification(String data);
+
   Future<ProjectModel> fetchProject(int projectId);
 
   Future<IList<Reference>> fetchProjectMembers(int projectId);

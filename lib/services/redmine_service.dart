@@ -21,6 +21,9 @@ class RedmineService implements Service {
   Uri joinApiKey(Uri uri) => _redmineApi.joinApiKey(uri);
 
   @override
+  Future<int> resolveIssueIdentification(String data) async => int.parse(data);
+
+  @override
   Future<ProjectModel> fetchProject(int projectId) async {
     final project = await _redmineApi.fetchProject(projectId);
     return ProjectModel(
@@ -123,6 +126,7 @@ extension on IssueDto {
   IssueModel toModel() {
     return IssueModel(
       id: id,
+      key: '$id',
       project: project,
       parentId: parentId,
       hrefUrl: hrefUrl,
@@ -144,6 +148,7 @@ extension on IssueChildDto {
   IssueChildModel toModel() {
     return IssueChildModel(
       id: id,
+      key: '$id',
       subject: subject,
       children: children.map((e) => e.toModel()).toIList(),
     );

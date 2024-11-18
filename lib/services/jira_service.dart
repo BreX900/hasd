@@ -4,8 +4,10 @@ import 'dart:math';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/jira/jira_api.dart';
 import 'package:hasd/apis/jira/jira_dto.dart';
+import 'package:hasd/apis/jira/jira_markup_dto.dart';
 import 'package:hasd/apis/jira/jira_markup_resolver.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
+import 'package:hasd/dto/jira_config_dto.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
@@ -20,6 +22,13 @@ class JiraService implements Service {
 
   @override
   Uri joinApiKey(Uri uri) => throw UnimplementedError();
+
+  @override
+  Future<int> resolveIssueIdentification(String data) async {
+    final issueKey = data.split('/').last;
+    final issue = await _jiraApi.fetchIssue(IdOrUid.uid(issueKey));
+    return issue.id;
+  }
 
   @override
   Future<ProjectModel> fetchProject(int projectId) async {
@@ -48,6 +57,7 @@ class JiraService implements Service {
 
   @override
   Future<IList<IssueModel>> fetchIssues() async {
+    final config = await JiraConfigDto.bin.requireRead();
     final issues = await _jiraApi.searchIssues(
       jql: JqlExpression.and([
         JqlFilter(JiraIssueFields.project, equalTo: 'TN'),
@@ -56,13 +66,14 @@ class JiraService implements Service {
       orderBy: 'created',
       descending: true,
     );
-    return issues.records.map((e) => e.toModel()).toIList();
+    return issues.records.map((e) => e.toModel(config)).toIList();
   }
 
   @override
   Future<IssueModel> fetchIssue(int issueId) async {
+    final config = await JiraConfigDto.bin.requireRead();
     final issue = await _jiraApi.fetchIssue(IdOrUid.id(issueId));
-    return issue.toModel();
+    return issue.toModel(config);
   }
 
   @override
@@ -135,12 +146,14 @@ extension on UserDto {
 }
 
 extension on JiraIssueDto {
-  IssueModel toModel() {
+  IssueModel toModel(JiraConfigDto config) {
+    final description = this.description;
     return IssueModel(
       id: id,
+      key: key,
       project: project.toModel(),
       parentId: null,
-      hrefUrl: 'hrefUrl',
+      hrefUrl: '${config.baseUrl}/browse/$key',
       status: status.toModel(),
       author: creator.toModel(),
       assignedTo: assignee?.toModel(),
@@ -148,12 +161,33 @@ extension on JiraIssueDto {
       dueDate: null,
       subject: summary,
       description: description != null
-          ? JiraMarkdownBuilder(attachments: attachment, data: description!)
+          ? JiraMarkdownBuilder(attachments: attachment, data: description)
           : '',
-      attachments: attachment.map((e) => e.toModel()).toIList(),
+      attachments: _filterAttachments(attachment, description).map((e) => e.toModel()).toIList(),
       journals: const IList.empty(),
       children: const IList.empty(),
     );
+  }
+
+  IList<JiraAttachmentDto> _filterAttachments(
+      IList<JiraAttachmentDto> attachments, JiraMarkupDto? data) {
+    return switch (data) {
+      null => attachments,
+      JiraMarkupTextDto() => attachments,
+      JiraMarkupParagraphDto() => data.content.fold(attachments, _filterAttachments),
+      JiraMarkupDocDto() => data.content.fold(attachments, _filterAttachments),
+      JiraMarkupHardBreakDto() => attachments,
+      JiraMarkupMediaSingleDto() => data.content.fold(attachments, _filterAttachments),
+      JiraMarkupMediaDto() => attachments.removeWhere((e) => e.filename == data.alt),
+      JiraMarkupMediaInlineDto() => attachments,
+      JiraMarkupMentionDto() => attachments,
+      JiraMarkupOrderedListDto() => data.content.fold(attachments, _filterAttachments),
+      JiraMarkupBulletListDto() => data.content.fold(attachments, _filterAttachments),
+      JiraMarkupListItemDto() => data.content.fold(attachments, _filterAttachments),
+      JiraMarkupInlineCardDto() => attachments,
+      JiraMarkupCodeBlockDto() => data.content.fold(attachments, _filterAttachments),
+      JiraMarkupHeadingDto() => data.content.fold(attachments, _filterAttachments),
+    };
   }
 }
 

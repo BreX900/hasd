@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/common/utils.dart';
@@ -10,6 +11,7 @@ import 'package:hasd/providers/providers.dart';
 import 'package:hasd/screens/app.dart';
 import 'package:hasd/screens/app_drawer.dart';
 import 'package:hasd/screens/issue_dialog.dart';
+import 'package:hasd/services/service.dart';
 import 'package:mek/mek.dart';
 import 'package:mekart/mekart.dart';
 import 'package:multi_split_view/multi_split_view.dart';
@@ -100,6 +102,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          IconButton(
+            onPressed: () async {
+              final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+              final issueId = await Service.instance.resolveIssueIdentification(clipboard!.text!);
+
+              if (!context.mounted) return;
+              await showDialog(
+                context: context,
+                builder: (context) => IssueDialog(issueId: issueId),
+              );
+            },
+            icon: const Icon(Icons.open_in_new),
+          ),
           IconButton(
             onPressed: () => App.of(context).toggleTimesheet(),
             icon: const Icon(Icons.dashboard),
@@ -228,9 +243,9 @@ class IssueInfoBar extends ConsumerWidget {
           message: 'Id',
           child: InkWell(
             onTap: () async => launchUrl(Uri.parse(issue.hrefUrl)),
-            onLongPress: () async => Utils.setClipboard('${issue.id}'),
+            onLongPress: () async => Utils.setClipboard(issue.key),
             onDoubleTap: () async => Utils.setClipboard(issue.hrefUrl),
-            child: Text('#${issue.id}'),
+            child: Text('#${issue.key}'),
           ),
         ),
         Tooltip(message: 'Status', child: Text(issue.status.name)),
