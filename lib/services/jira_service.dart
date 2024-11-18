@@ -11,14 +11,15 @@ import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
 
 class JiraService implements Service {
-  static JiraService get instance => const JiraService._();
+  final JiraApi _jiraApi;
 
-  JiraApi get _jiraApi => JiraApi.instance;
-
-  const JiraService._();
+  const JiraService(this._jiraApi);
 
   @override
   Map<String, String> get authorizationHeaders => _jiraApi.authorizationHeaders;
+
+  @override
+  Uri joinApiKey(Uri uri) => throw UnimplementedError();
 
   @override
   Future<ProjectModel> fetchProject(int projectId) async {

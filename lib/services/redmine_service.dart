@@ -8,14 +8,17 @@ import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
 
 class RedmineService implements Service {
-  static RedmineService get instance => const RedmineService._();
+  final RedmineApi _redmineApi;
 
-  RedmineApi get _redmineApi => RedmineApi.instance;
+  const RedmineService(this._redmineApi);
 
-  const RedmineService._();
+  RedmineApi get api => _redmineApi;
 
   @override
   Map<String, String> get authorizationHeaders => _redmineApi.authorizationHeaders;
+
+  @override
+  Uri joinApiKey(Uri uri) => _redmineApi.joinApiKey(uri);
 
   @override
   Future<ProjectModel> fetchProject(int projectId) async {

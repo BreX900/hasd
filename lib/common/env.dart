@@ -1,4 +1,6 @@
 abstract final class Env {
+  static const Flavor flavor = Flavor.jira;
+
   static const String youtrackApiUrl = String.fromEnvironment('YOUTRACK_API_URL');
   static const String youtrackApiToken = String.fromEnvironment('YOUTRACK_API_TOKEN');
 
@@ -9,3 +11,5 @@ abstract final class Env {
   static const String jiraEmail = String.fromEnvironment('JIRA_EMAIL');
   static const String jiraApiToken = String.fromEnvironment('JIRA_API_TOKEN');
 }
+
+enum Flavor { jira, redmine }

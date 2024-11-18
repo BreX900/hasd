@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hasd/apis/redmine/redmine_api.dart';
 import 'package:hasd/models/models.dart';
+import 'package:hasd/services/service.dart';
 import 'package:intl/intl.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -40,7 +40,7 @@ Future<void> launchFileWebView(BuildContext context, AttachmentModel attachment)
     final uri = Uri.parse(attachment.contentUrl);
     final officeUri = Uri.parse('https://view.officeapps.live.com/op/view.aspx');
     final fileUri = officeUri.replace(queryParameters: {
-      'src': RedmineApi.instance.joinApiKey(uri).toString(),
+      'src': Service.instance.joinApiKey(uri).toString(),
       'wdOrigin': 'BROWSELINK',
     });
     await launchUrl(fileUri);

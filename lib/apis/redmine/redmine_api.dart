@@ -6,11 +6,9 @@ import 'package:intl/intl.dart';
 import 'package:mekart/mekart.dart';
 
 class RedmineApi {
-  static late RedmineApi instance;
-
   final String _baseUrl;
-  final String _apiKey;
-  late final Dio httpClient = Dio(BaseOptions(
+  final String _key;
+  late final Dio _httpClient = Dio(BaseOptions(
     baseUrl: _baseUrl,
     headers: {
       ...authorizationHeaders,
@@ -20,13 +18,17 @@ class RedmineApi {
     listFormat: ListFormat.csv,
   ));
 
-  RedmineApi(this._apiKey, this._baseUrl);
+  RedmineApi({
+    required String baseUrl,
+    required String key,
+  })  : _baseUrl = baseUrl,
+        _key = key;
 
-  Map<String, String> get authorizationHeaders => {'X-Redmine-API-Key': _apiKey};
+  Map<String, String> get authorizationHeaders => {'X-Redmine-API-Key': _key};
 
   Future<ProjectDto> fetchProject(int id) async {
     final response =
-        await httpClient.get<Map<String, dynamic>>('/projects/$id.json', queryParameters: {
+        await _httpClient.get<Map<String, dynamic>>('/projects/$id.json', queryParameters: {
       'include': ['time_entry_activities'],
     });
     final data = response.data!['project'] as Map<String, dynamic>;
@@ -35,7 +37,7 @@ class RedmineApi {
   }
 
   Future<IList<MembershipDto>> fetchProjectMemberships(int id, {int? offset}) async {
-    final response = await httpClient
+    final response = await _httpClient
         .get<Map<String, dynamic>>('/projects/$id/memberships.json', queryParameters: {
       'include': ['time_entry_activities'],
       'limit': 100,
@@ -55,7 +57,7 @@ class RedmineApi {
     required int? assignedToId,
     IList<IssuesExtensions> extensions = const IListConst([]),
   }) async {
-    final response = await httpClient.get<Map<String, dynamic>>('/issues.json', queryParameters: {
+    final response = await _httpClient.get<Map<String, dynamic>>('/issues.json', queryParameters: {
       'set_filter': 1,
       if (assignedToId != null) 'f[assigned_to_id]': assignedToId < 0 ? '=me' : assignedToId,
       if (status.isNotEmpty || isOpen)
@@ -72,7 +74,7 @@ class RedmineApi {
     IList<IssueExtensions> extensions = const IListConst([]),
   }) async {
     final response =
-        await httpClient.get<Map<String, dynamic>>('/issues/$id.json', queryParameters: {
+        await _httpClient.get<Map<String, dynamic>>('/issues/$id.json', queryParameters: {
       if (extensions.isNotEmpty) 'include': extensions.map((e) => e.code).toList(),
     });
     final issue = response.data!['issue'] as Map<String, dynamic>;
@@ -81,7 +83,7 @@ class RedmineApi {
   }
 
   Future<void> updateIssue(int id, IssueUpdateDto data) async {
-    await httpClient.put<Map<String, dynamic>>('/issues/$id.json', data: {
+    await _httpClient.put<Map<String, dynamic>>('/issues/$id.json', data: {
       'issue': data,
     });
   }
@@ -94,7 +96,7 @@ class RedmineApi {
   // }
 
   Future<IList<IssueStatusDto>> fetchIssueStatutes() async {
-    final response = await httpClient.get<Map<String, dynamic>>('/issue_statuses.json');
+    final response = await _httpClient.get<Map<String, dynamic>>('/issue_statuses.json');
     final statutes = response.data!['issue_statuses'] as List<dynamic>;
     // print(jsonEncode(statutes));
     return statutes.map((e) => IssueStatusDto.fromJson(e as Map<String, dynamic>)).toIList();
@@ -115,7 +117,7 @@ class RedmineApi {
       if (userId != null) 'f[user_id]': userId < 0 ? '=me' : userId,
     };
     final response =
-        await httpClient.get<Map<String, dynamic>>('/time_entries.json', queryParameters: {
+        await _httpClient.get<Map<String, dynamic>>('/time_entries.json', queryParameters: {
       if (filters.isNotEmpty) 'set_filter': 1,
       ...filters,
       if (limit != null) 'limit': limit,
@@ -132,7 +134,7 @@ class RedmineApi {
     required DateTime date,
     required Duration duration,
   }) async {
-    await httpClient.post<Map<String, dynamic>>('/time_entries.json', data: {
+    await _httpClient.post<Map<String, dynamic>>('/time_entries.json', data: {
       'time_entry': {
         if (issueId != null) 'issue_id': issueId,
         if (activityId != null) 'activity_id': activityId,
@@ -142,5 +144,5 @@ class RedmineApi {
     });
   }
 
-  Uri joinApiKey(Uri uri) => uri.replace(queryParameters: {'key': _apiKey});
+  Uri joinApiKey(Uri uri) => uri.replace(queryParameters: {'key': _key});
 }

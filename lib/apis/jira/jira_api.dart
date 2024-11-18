@@ -39,26 +39,31 @@ abstract final class JiraIssueFields {
 // https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/#api-rest-api-3-search-get
 class JiraApi {
   static final Codec<String, String> _utf8ToBase64 = utf8.fuse(base64);
-  static late final JiraApi instance;
 
-  final Map<String, String> authorizationHeaders;
-  final Dio _httpClient;
+  final String _baseUrl;
+  final String _userEmail;
+  final String _token;
+
+  late final Dio _httpClient = Dio(BaseOptions(
+    baseUrl: '$_baseUrl/rest/api',
+    headers: {
+      ...authorizationHeaders,
+      Headers.contentTypeHeader: Headers.jsonContentType,
+      Headers.acceptHeader: Headers.jsonContentType,
+    },
+  ));
+
+  Map<String, String> get authorizationHeaders => {
+        'authorization': 'Basic ${_utf8ToBase64.encode('$_userEmail:$_token')}',
+      };
 
   JiraApi({
     required String baseUrl,
     required String userEmail,
     required String token,
-  })  : authorizationHeaders = {
-          'authorization': 'Basic ${_utf8ToBase64.encode('$userEmail:$token')}',
-        },
-        _httpClient = Dio(BaseOptions(
-          baseUrl: '$baseUrl/rest/api',
-          headers: {
-            'authorization': 'Basic ${_utf8ToBase64.encode('$userEmail:$token')}',
-            Headers.contentTypeHeader: Headers.jsonContentType,
-            Headers.acceptHeader: Headers.jsonContentType,
-          },
-        ));
+  })  : _baseUrl = baseUrl,
+        _userEmail = userEmail,
+        _token = token;
 
   Future<UserDto> fetchCurrentUser(String username) async {
     final response = await _httpClient.get<Map<String, dynamic>>('/3/myself');

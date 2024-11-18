@@ -16,6 +16,7 @@ import 'package:hasd/dto/jira_config_dto.dart';
 import 'package:hasd/dto/youtrack_config_dto.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/services/jira_service.dart';
+import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
 
 void main(List<String> args) async {
@@ -31,7 +32,7 @@ void main(List<String> args) async {
   await runner.run(args);
 }
 
-JiraService get _service => JiraService.instance;
+JiraService get _service => Service.instance as JiraService;
 YoutrackApi get _youtrackApi => YoutrackApi.instance!;
 
 Future<void> _show() async {
@@ -143,17 +144,15 @@ abstract class _CommandWithDependencies extends Command<void> {
       baseUrl: youtrackConfig.baseUrl,
       token: youtrackConfig.apiToken,
     );
-    JiraApi.instance = JiraApi(
+    Service.instance = JiraService(JiraApi(
       baseUrl: jiraConfig.baseUrl,
       userEmail: jiraConfig.userEmail,
       token: jiraConfig.apiToken,
-    );
+    ));
   }
 }
 
 class _CreteCommand extends _CommandWithDependencies {
-  static JiraService get _service => JiraService.instance;
-
   @override
   String get name => 'create';
 

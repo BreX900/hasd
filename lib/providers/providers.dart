@@ -6,11 +6,13 @@ import 'package:hasd/apis/youtrack/youtrack_api.dart';
 import 'package:hasd/apis/youtrack/youtrack_dto.dart';
 import 'package:hasd/dto/youtrack_config_dto.dart';
 import 'package:hasd/models/models.dart';
+import 'package:hasd/services/redmine_service.dart';
 import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
 
 abstract final class Providers {
   static Service get _service => Service.instance;
+  static RedmineApi get _redmineApi => (_service as RedmineService).api;
 
   static final settingsBin = Bin<AppSettings>(
     name: 'redmine_settings',
@@ -64,7 +66,7 @@ abstract final class Providers {
       doneRatio: status != null ? (appSettings.doneIssueStatus == status.id ? 100 : null) : null,
       assignedToId: assignedTo?.id,
     );
-    await RedmineApi.instance.updateIssue(issue.id, data);
+    await _redmineApi.updateIssue(issue.id, data);
 
     ref.invalidate(Providers.issues);
     ref.invalidate(Providers.issue(issue.id));
@@ -76,7 +78,7 @@ abstract final class Providers {
     required String comment,
   }) async {
     final data = IssueUpdateDto(notes: comment);
-    await RedmineApi.instance.updateIssue(issue.id, data);
+    await _redmineApi.updateIssue(issue.id, data);
 
     ref.invalidate(Providers.issues);
     ref.invalidate(Providers.issue(issue.id));
