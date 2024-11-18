@@ -6,16 +6,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/common/utils_more.dart';
+import 'package:hasd/dto/youtrack_config_dto.dart';
 import 'package:hasd/providers/providers.dart';
 import 'package:mek/mek.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 
 final _stateProvider = FutureProvider((ref) async {
+  final youtrackConfig = await ref.watch(Providers.youtrackConfig.future);
   final appSettings = await ref.watch(Providers.settings.future);
 
   final issueStatutes = await ref.watch(Providers.issueStatutes.future);
 
   return (
+    youtrackConfig: youtrackConfig,
     appSettings: appSettings,
     issueStatutes: issueStatutes,
   );
@@ -47,11 +50,11 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
   }
 
   Future<void> _init() async {
-    final (:appSettings, :issueStatutes) = await ref.read(_stateProvider.future);
+    final (:youtrackConfig, :appSettings, :issueStatutes) = await ref.read(_stateProvider.future);
 
     _redmineApiKeyFieldBloc.updateValue(appSettings.apiKey);
-    _youtrackApiTokenFieldBloc.updateValue(appSettings.youtrackApiKey);
-    _youtrackIssueIdBloc.updateValue(appSettings.youtrackIssueId);
+    _youtrackApiTokenFieldBloc.updateValue(youtrackConfig?.apiToken);
+    _youtrackIssueIdBloc.updateValue(youtrackConfig?.ticketId);
 
     _statuesFieldBloc.updateValue(issueStatutes.where((e) {
       return appSettings.issueStatutes.contains(e.id);
@@ -140,8 +143,8 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
               suffixIcon: ReactiveEditButton(
                 toggleableObscureText: true,
                 onSubmit: () async {
-                  await Providers.settingsBin.update((data) {
-                    return data.change((c) => c.youtrackApiKey = _youtrackApiTokenFieldBloc.value!);
+                  await YoutrackConfigDto.bin.update((data) {
+                    return data!.change((c) => c.apiToken = _youtrackApiTokenFieldBloc.value!);
                   });
                   _youtrackApiTokenFieldBloc.markAsPristine();
                   _youtrackApiTokenFieldBloc.markAsUntouched();
@@ -155,8 +158,8 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
               labelText: 'Issue for spent time',
               suffixIcon: ReactiveEditButton(
                 onSubmit: () async {
-                  await Providers.settingsBin.update((data) {
-                    return data.change((c) => c.youtrackIssueId = _youtrackIssueIdBloc.value!);
+                  await YoutrackConfigDto.bin.update((data) {
+                    return data!.change((c) => c..ticketId = _youtrackIssueIdBloc.value!);
                   });
                   _youtrackIssueIdBloc.markAsPristine();
                   _youtrackIssueIdBloc.markAsUntouched();

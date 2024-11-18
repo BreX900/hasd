@@ -18,6 +18,8 @@ scripts:
     dart pub global activate flutter_launcher_icons 0.13.1 &&
     dart pub global run flutter_launcher_icons
 
+  activate: >-
+    dart pub global activate . --source=path
   deploy:macos: >-
     flutter build macos --dart-define-from-file=.env.hasd &&
     rm -r ~/Desktop/Hasd.app &&
@@ -72,6 +74,8 @@ dev_dependencies:
   build_runner: ^2.4.13
   mek_data_class_generator: ^1.5.1
   json_serializable: ^6.8.0
+
+  cli_util: ^0.4.2
 
 #  shelf: ^1.4.1
 #  shelf_swagger_ui: ^1.0.0+2

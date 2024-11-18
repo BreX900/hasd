@@ -1,10 +1,7 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/jira/jira_dto.dart';
 import 'package:hasd/apis/youtrack/youtrack_dto.dart';
-import 'package:hasd/common/env.dart';
 import 'package:mekart/mekart.dart';
 
 class YoutrackApi {
@@ -12,12 +9,11 @@ class YoutrackApi {
 
   final Dio _httpClient;
 
-  YoutrackApi(String apiToken)
+  YoutrackApi({required String baseUrl, required String token})
       : _httpClient = Dio(BaseOptions(
-          // ignore: avoid_redundant_argument_values
-          baseUrl: Env.youtrackApiUrl,
+          baseUrl: '$baseUrl/api',
           headers: {
-            'authorization': 'Bearer $apiToken',
+            'authorization': 'Bearer $token',
             Headers.acceptHeader: '${Headers.jsonMimeType}',
             Headers.contentTypeHeader: '${Headers.jsonMimeType}',
           },
@@ -44,8 +40,6 @@ class YoutrackApi {
   }
 
   Future<void> createIssueWorkItem(String issueId, IssueWorkItemCreateDto data) async {
-    final response = await _httpClient.post('/issues/$issueId/timeTracking/workItems', data: data);
-    // ignore: avoid_print
-    print(jsonEncode(response.data));
+    await _httpClient.post('/issues/$issueId/timeTracking/workItems', data: data);
   }
 }

@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hasd/apis/jira/jira_api.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/youtrack/youtrack_api.dart';
 import 'package:hasd/common/t.dart';
+import 'package:hasd/dto/jira_config_dto.dart';
+import 'package:hasd/dto/youtrack_config_dto.dart';
 import 'package:hasd/providers/providers.dart';
 import 'package:hasd/redmine/dashboard_screen.dart';
 import 'package:hasd/screens/timesheet_screen.dart';
@@ -27,13 +32,13 @@ class App extends ConsumerStatefulWidget {
 }
 
 class MainAppState extends ConsumerState<App> with WindowListener {
-  var _hasCredentials = true;
+  var _hasCredentials = false;
   var _timesheet = false;
 
   @override
   void initState() {
     super.initState();
-    _init(widget.settings);
+    unawaited(_init(widget.settings));
     if (!kIsWeb) WindowManager.instance.addListener(this);
   }
 
@@ -51,13 +56,31 @@ class MainAppState extends ConsumerState<App> with WindowListener {
     ref.invalidate(Providers.times);
   }
 
-  void _init(AppSettings settings) {
+  Future<void> _init(AppSettings settings) async {
     // final hasCredentials = settings.apiKey.isNotEmpty;
     // if (_hasCredentials != hasCredentials) setState(() => _hasCredentials = hasCredentials);
     // if (settings.apiKey.isEmpty) return;
     // RedmineApi.instance = RedmineApi(settings.apiKey, Env.redmineApiUrl);
-    YoutrackApi.instance =
-        settings.youtrackApiKey.isNotEmpty ? YoutrackApi(settings.youtrackApiKey) : null;
+
+    final youtrackConfig = await YoutrackConfigDto.bin.read();
+    if (youtrackConfig != null) {
+      YoutrackApi.instance = YoutrackApi(
+        baseUrl: youtrackConfig.baseUrl,
+        token: youtrackConfig.apiToken,
+      );
+    }
+
+    final jiraConfig = await JiraConfigDto.bin.read();
+    if (jiraConfig != null) {
+      JiraApi.instance = JiraApi(
+        baseUrl: jiraConfig.baseUrl,
+        userEmail: jiraConfig.userEmail,
+        token: jiraConfig.apiToken,
+      );
+    }
+
+    if (youtrackConfig == null || jiraConfig == null) return;
+    setState(() => _hasCredentials = true);
   }
 
   void toggleTimesheet() {

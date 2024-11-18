@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Notification;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hasd/apis/jira/jira_api.dart';
+import 'package:hasd/common/env.dart';
 import 'package:hasd/providers/providers.dart';
 import 'package:hasd/screens/app.dart';
 import 'package:logging/logging.dart';
@@ -52,6 +54,12 @@ void main() async {
   //   }
   // }
 
+  JiraApi.instance = JiraApi(
+    baseUrl: Env.jiraApiUrl,
+    userEmail: Env.jiraEmail,
+    token: Env.jiraApiToken,
+  );
+
   final container = ProviderContainer(
     observers: const [Observers.provider],
   );
@@ -67,7 +75,7 @@ void main() async {
 class _BinEngine extends BinEngineBase {
   @override
   Future<String?> getDirectoryPath() async {
-    final directory = await getApplicationDocumentsDirectory();
+    final directory = await getApplicationSupportDirectory();
     return directory.path;
   }
 }

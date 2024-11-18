@@ -4,6 +4,7 @@ import 'package:hasd/apis/redmine/redmine_api.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/youtrack/youtrack_api.dart';
 import 'package:hasd/apis/youtrack/youtrack_dto.dart';
+import 'package:hasd/dto/youtrack_config_dto.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
@@ -17,7 +18,8 @@ abstract final class Providers {
     fallbackData: const AppSettings(),
   );
 
-  static final settings = StreamProvider((ref) => settingsBin.stream.map((e) => e));
+  static final youtrackConfig = StreamProvider((ref) => YoutrackConfigDto.bin.stream);
+  static final settings = StreamProvider((ref) => settingsBin.stream);
 
   static final project = FutureProvider.family((ref, int projectId) async {
     return await _service.fetchProject(projectId);
@@ -88,7 +90,7 @@ abstract final class Providers {
     required WorkDuration duration,
   }) async {
     date = DateTime.utc(date.year, date.month, date.day);
-    final appSettings = await ref.read(Providers.settings.future);
+    final youtrackConfig = await YoutrackConfigDto.bin.requireRead();
 
     await _service.createWorkLog(
       issueId: issue.id,
@@ -97,7 +99,7 @@ abstract final class Providers {
       timeSpent: duration,
     );
     await YoutrackApi.instance!.createIssueWorkItem(
-      appSettings.youtrackIssueId,
+      youtrackConfig.ticketId,
       IssueWorkItemCreateDto(
         date: date,
         duration: DurationValueDto(minutes: duration.inMinutes),

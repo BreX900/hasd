@@ -386,17 +386,12 @@ class AppSettings with _$AppSettings {
   final int? defaultTimeActivity;
   final IMap<String, IssueSettings> issues;
 
-  final String youtrackApiKey;
-  final String youtrackIssueId;
-
   const AppSettings({
     this.apiKey = '',
     this.issueStatutes = const IListConst([]),
     this.doneIssueStatus,
     this.defaultTimeActivity,
     this.issues = const IMapConst({}),
-    this.youtrackApiKey = '',
-    this.youtrackIssueId = '',
   });
 
   factory AppSettings.fromJson(Map<String, dynamic> map) => _$AppSettingsFromJson(map);
