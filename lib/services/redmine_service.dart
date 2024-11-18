@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/redmine/redmine_api.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
+import 'package:hasd/dto/redmine_config_dto.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/providers/providers.dart';
 import 'package:hasd/services/service.dart';
@@ -60,6 +61,7 @@ class RedmineService implements Service {
 
   @override
   Future<IList<IssueModel>> fetchIssues() async {
+    final config = await RedmineConfigDto.bin.requireRead();
     final issues = await _redmineApi.fetchIssues(
       assignedToId: -1,
       isOpen: true,
@@ -69,16 +71,17 @@ class RedmineService implements Service {
         IssuesExtensions.relations,
       ]),
     );
-    return issues.map((issue) => issue.toModel()).toIList();
+    return issues.map((issue) => issue.toModel(config)).toIList();
   }
 
   @override
   Future<IssueModel> fetchIssue(int issueId) async {
+    final config = await RedmineConfigDto.bin.requireRead();
     final issue = await _redmineApi.fetchIssue(
       issueId,
       extensions: const IListConst(IssueExtensions.values),
     );
-    return issue.toModel();
+    return issue.toModel(config);
   }
 
   @override
@@ -123,13 +126,13 @@ class RedmineService implements Service {
 }
 
 extension on IssueDto {
-  IssueModel toModel() {
+  IssueModel toModel(RedmineConfigDto config) {
     return IssueModel(
       id: id,
       key: '$id',
       project: project,
       parentId: parentId,
-      hrefUrl: hrefUrl,
+      hrefUrl: '${config.baseUrl}/issues/$id',
       status: status,
       author: author,
       assignedTo: assignedTo,

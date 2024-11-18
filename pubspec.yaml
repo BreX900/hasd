@@ -20,13 +20,10 @@ scripts:
 
   activate: >-
     dart pub global activate . --source=path
-  deploy:macos: >-
-    flutter build macos --dart-define-from-file=.env.hasd &&
+  deploy: >-
+    flutter build macos &&
     rm -r ~/Desktop/Hasd.app &&
     mv ./build/macos/Build/Products/Release/gitle.app ~/Desktop/Hasd.app
-  deploy:web: >-
-    flutter build web --web-browser-flag="--disable-web-security" --dart-define-from-file=.env.hasd &&
-    firebase deploy --only=hosting
 
   recreate-project: flutter create --platforms=web,windows,macos --org=com.doonties --project-name=hasd .
 
@@ -81,6 +78,9 @@ dev_dependencies:
 #  shelf_swagger_ui: ^1.0.0+2
 #
 #  flutter_launcher_icons: ^0.13.1
+
+executables:
+  hasd: hasd
 
 flutter:
   uses-material-design: true

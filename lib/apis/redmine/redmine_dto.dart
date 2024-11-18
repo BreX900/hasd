@@ -1,6 +1,5 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/redmine/redmine_serializable.dart';
-import 'package:hasd/shared/env.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:mek_data_class/mek_data_class.dart';
 import 'package:mekart/mekart.dart';
@@ -44,8 +43,6 @@ class IssueDto with _$IssueDto implements IssueChildDto {
   @override
   @JsonKey(defaultValue: IList.empty)
   final IList<IssueChildDto> children;
-
-  String get hrefUrl => '${Env.redmineApiUrl}/issues/$id';
 
   const IssueDto({
     required this.id,
