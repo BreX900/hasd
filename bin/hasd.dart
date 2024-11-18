@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 // ignore: depend_on_referenced_packages
 import 'package:args/command_runner.dart';
+import 'package:cli_util/cli_logging.dart';
 // ignore: depend_on_referenced_packages
 import 'package:cli_util/cli_util.dart';
 import 'package:hasd/apis/jira/jira_api.dart';
@@ -70,12 +71,20 @@ class _ConfigCommand extends Command<void> {
   @override
   Future<void> run() async {
     final youtrackConfig = await YoutrackConfigDto.bin.read();
-    if (youtrackConfig != null) print('YouTrack: ${jsonEncode(youtrackConfig)}');
+    if (youtrackConfig != null) _printConfig('YouTrack', youtrackConfig.toJson());
 
     final jiraConfig = await JiraConfigDto.bin.read();
-    if (jiraConfig != null) print('Jira: ${jsonEncode(jiraConfig)}');
+    if (jiraConfig != null) _printConfig('Jira', jiraConfig.toJson());
 
     if (youtrackConfig == null && jiraConfig == null) print('Configurations is empty.');
+  }
+
+  void _printConfig(String name, Map<String, dynamic> data) {
+    final ansi = Ansi(Ansi.terminalSupportsAnsi);
+    print('${ansi.yellow}$name:${ansi.none}');
+    data.forEach((key, value) {
+      print('- $key: ${jsonEncode(value)}');
+    });
   }
 }
 
