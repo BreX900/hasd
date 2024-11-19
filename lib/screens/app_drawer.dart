@@ -4,8 +4,6 @@ import 'package:collection/collection.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hasd/apis/jira/jira_api.dart';
-import 'package:hasd/apis/redmine/redmine_api.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/youtrack/youtrack_api.dart';
 import 'package:hasd/dto/jira_config_dto.dart';
@@ -16,6 +14,7 @@ import 'package:hasd/services/jira_service.dart';
 import 'package:hasd/services/redmine_service.dart';
 import 'package:hasd/services/service.dart';
 import 'package:hasd/shared/env.dart';
+import 'package:hasd/shared/instances.dart';
 import 'package:hasd/shared/utils_more.dart';
 import 'package:hasd/widgets/field_padding.dart';
 import 'package:mek/mek.dart';
@@ -68,14 +67,19 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
         .map((e) => e ?? const ISet<Reference>.empty())
         .distinct()
         .listen((values) async {
-      await Providers.settingsBin.update(
-          (data) => data.change((b) => b..issueStatutes = values.map((e) => e.id).toIList()));
+      await Instances.bin.runTransaction((tx) async {
+        final settings = await tx.settings.read();
+        await tx.settings
+            .write(settings.change((b) => b..issueStatutes = values.map((e) => e.id).toIList()));
+      });
     });
     _doneStatusFieldBloc
         .updateValue(issueStatutes.firstWhereOrNull((e) => e.id == appSettings.doneIssueStatus));
     _doneStatusFieldBloc.valueChanges.distinct().listen((value) async {
-      await Providers.settingsBin
-          .update((data) => data.change((b) => b..doneIssueStatus = value?.id));
+      await Instances.bin.runTransaction((tx) async {
+        final settings = await tx.settings.read();
+        await tx.settings.write(settings.change((b) => b..doneIssueStatus = value?.id));
+      });
     });
   }
 
@@ -159,7 +163,7 @@ class _RedmineFormState extends ConsumerState<_RedmineForm> {
   }
 
   Future<void> _init() async {
-    final config = await RedmineConfigDto.bin.read();
+    final config = await Instances.bin.redmineConfig.read();
 
     _baseUrlControl.updateValue(config?.baseUrl);
     _apiKeyControl.updateValue(config?.apiKey);
@@ -170,12 +174,9 @@ class _RedmineFormState extends ConsumerState<_RedmineForm> {
       baseUrl: _baseUrlControl.value!,
       apiKey: _apiKeyControl.value!,
     );
-    final service = RedmineService(RedmineApi(
-      baseUrl: config.baseUrl,
-      key: config.apiKey,
-    ));
+    final service = RedmineService(config);
     await service.fetchIssues();
-    await RedmineConfigDto.bin.write(config);
+    await Instances.bin.redmineConfig.write(config);
     Service.instance = service;
     _form.markAsClean(enabled: false);
   }
@@ -238,7 +239,7 @@ class _YoutrackFormState extends ConsumerState<_YoutrackForm> {
   }
 
   Future<void> _init() async {
-    final config = await YoutrackConfigDto.bin.read();
+    final config = await Instances.bin.youtrackConfig.read();
 
     _baseUrlControl.updateValue(config?.baseUrl);
     _apiTokenControl.updateValue(config?.apiToken);
@@ -256,7 +257,7 @@ class _YoutrackFormState extends ConsumerState<_YoutrackForm> {
       token: config.apiToken,
     );
     await YoutrackApi.instance!.fetchIssueWorkItems();
-    await YoutrackConfigDto.bin.write(config);
+    await Instances.bin.youtrackConfig.write(config);
     _form.markAsClean(enabled: false);
   }
 
@@ -322,7 +323,7 @@ class _JiraFormState extends ConsumerState<_JiraForm> {
   }
 
   Future<void> _init() async {
-    final config = await JiraConfigDto.bin.read();
+    final config = await Instances.bin.jiraConfig.read();
 
     _baseUrlControl.updateValue(config?.baseUrl);
     _userEmailControl.updateValue(config?.userEmail);
@@ -335,13 +336,9 @@ class _JiraFormState extends ConsumerState<_JiraForm> {
       userEmail: _userEmailControl.value!,
       apiToken: _apiTokenControl.value!,
     );
-    final service = JiraService(JiraApi(
-      baseUrl: config.baseUrl,
-      userEmail: config.userEmail,
-      token: config.apiToken,
-    ));
+    final service = JiraService(config);
     await service.fetchIssues();
-    await JiraConfigDto.bin.write(config);
+    await Instances.bin.jiraConfig.write(config);
     Service.instance = service;
     _form.markAsClean(enabled: false);
   }

@@ -9,24 +9,26 @@ import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
 
 class RedmineService implements Service {
-  final RedmineApi _redmineApi;
+  final RedmineConfigDto config;
+  late final RedmineApi api = RedmineApi(
+    baseUrl: config.baseUrl,
+    key: config.apiKey,
+  );
 
-  const RedmineService(this._redmineApi);
-
-  RedmineApi get api => _redmineApi;
+  RedmineService(this.config);
 
   @override
-  Map<String, String> get authorizationHeaders => _redmineApi.authorizationHeaders;
+  Map<String, String> get authorizationHeaders => api.authorizationHeaders;
 
   @override
-  Uri joinApiKey(Uri uri) => _redmineApi.joinApiKey(uri);
+  Uri joinApiKey(Uri uri) => api.joinApiKey(uri);
 
   @override
   Future<int> resolveIssueIdentification(String data) async => int.parse(data);
 
   @override
   Future<ProjectModel> fetchProject(int projectId) async {
-    final project = await _redmineApi.fetchProject(projectId);
+    final project = await api.fetchProject(projectId);
     return ProjectModel(
       id: project.id,
       workLogActivities: project.timeEntryActivities,
@@ -37,7 +39,7 @@ class RedmineService implements Service {
   Future<IList<Reference>> fetchProjectMembers(int projectId) async {
     var memberships = const IList<MembershipDto>.empty();
     while (true) {
-      final pagedMemberships = await _redmineApi.fetchProjectMemberships(
+      final pagedMemberships = await api.fetchProjectMemberships(
         projectId,
         offset: memberships.length,
       );
@@ -55,14 +57,13 @@ class RedmineService implements Service {
 
   @override
   Future<IList<Reference>> fetchAllIssueStatues() async {
-    final statutes = await _redmineApi.fetchIssueStatutes();
+    final statutes = await api.fetchIssueStatutes();
     return statutes.where((e) => !e.isClosed).map((e) => Reference(e.id, e.name)).toIList();
   }
 
   @override
   Future<IList<IssueModel>> fetchIssues() async {
-    final config = await RedmineConfigDto.bin.requireRead();
-    final issues = await _redmineApi.fetchIssues(
+    final issues = await api.fetchIssues(
       assignedToId: -1,
       isOpen: true,
       extensions: const IListConst([
@@ -76,8 +77,7 @@ class RedmineService implements Service {
 
   @override
   Future<IssueModel> fetchIssue(int issueId) async {
-    final config = await RedmineConfigDto.bin.requireRead();
-    final issue = await _redmineApi.fetchIssue(
+    final issue = await api.fetchIssue(
       issueId,
       extensions: const IListConst(IssueExtensions.values),
     );
@@ -87,7 +87,7 @@ class RedmineService implements Service {
   @override
   Future<IList<WorkLogModel>> fetchWorkLogs({Date? spentFrom, Date? spentTo, int? issueId}) async {
     final timeEntries = await Providers.fetchAll((limit, offset) async {
-      return await _redmineApi.fetchTimeEntries(
+      return await api.fetchTimeEntries(
         userId: -1,
         limit: limit,
         offset: offset,
@@ -116,7 +116,7 @@ class RedmineService implements Service {
     required DateTime started,
     required WorkDuration timeSpent,
   }) async {
-    await _redmineApi.createTimeEntry(
+    await api.createTimeEntry(
       issueId: issueId,
       activityId: activityId,
       date: started,

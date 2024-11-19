@@ -1,19 +1,20 @@
-import 'dart:convert';
-
 import 'package:json_annotation/json_annotation.dart';
 import 'package:mekart/mekart.dart';
 
 part '../generated/dto/redmine_config_dto.g.dart';
 
+extension JiraConfigBin on BinSession {
+  BinStore<RedmineConfigDto?> get redmineConfig => BinStore(
+        session: this,
+        name: 'redmine_config.json',
+        codec: const JsonCodecWithIndent('  '),
+        deserializer: (data) => RedmineConfigDto.fromJson(data as Map<String, dynamic>),
+        fallbackData: null,
+      );
+}
+
 @JsonSerializable(createFactory: true, createToJson: true)
 class RedmineConfigDto {
-  static final bin = Bin<RedmineConfigDto?>(
-    name: 'redmine_config.json',
-    encoder: const JsonEncoder.withIndent('  '),
-    deserializer: (data) => RedmineConfigDto.fromJson(data as Map<String, dynamic>),
-    fallbackData: null,
-  );
-
   final String baseUrl;
   final String apiKey;
 

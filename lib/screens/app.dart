@@ -4,10 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hasd/apis/jira/jira_api.dart';
-import 'package:hasd/apis/redmine/redmine_api.dart';
-import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/youtrack/youtrack_api.dart';
+import 'package:hasd/dto/app_settings_dto.dart';
 import 'package:hasd/dto/jira_config_dto.dart';
 import 'package:hasd/dto/redmine_config_dto.dart';
 import 'package:hasd/dto/youtrack_config_dto.dart';
@@ -18,6 +16,7 @@ import 'package:hasd/services/jira_service.dart';
 import 'package:hasd/services/redmine_service.dart';
 import 'package:hasd/services/service.dart';
 import 'package:hasd/shared/env.dart';
+import 'package:hasd/shared/instances.dart';
 import 'package:hasd/shared/t.dart';
 import 'package:mek/mek.dart';
 import 'package:multi_split_view/multi_split_view.dart';
@@ -68,7 +67,7 @@ class MainAppState extends ConsumerState<App> with WindowListener {
     // if (settings.apiKey.isEmpty) return;
     // RedmineApi.instance = RedmineApi(settings.apiKey, Env.redmineApiUrl);
 
-    final youtrackConfig = await YoutrackConfigDto.bin.read();
+    final youtrackConfig = await Instances.bin.youtrackConfig.read();
     if (youtrackConfig != null) {
       YoutrackApi.instance = YoutrackApi(
         baseUrl: youtrackConfig.baseUrl,
@@ -79,22 +78,15 @@ class MainAppState extends ConsumerState<App> with WindowListener {
     Service? service;
     switch (Env.flavor) {
       case Flavor.redmine:
-        final jiraConfig = await RedmineConfigDto.bin.read();
-        if (jiraConfig == null) break;
+        final config = await Instances.bin.redmineConfig.read();
+        if (config == null) break;
 
-        service = RedmineService(RedmineApi(
-          baseUrl: jiraConfig.baseUrl,
-          key: jiraConfig.apiKey,
-        ));
+        service = RedmineService(config);
       case Flavor.jira:
-        final jiraConfig = await JiraConfigDto.bin.read();
-        if (jiraConfig == null) break;
+        final config = await Instances.bin.jiraConfig.read();
+        if (config == null) break;
 
-        service = JiraService(JiraApi(
-          baseUrl: jiraConfig.baseUrl,
-          userEmail: jiraConfig.userEmail,
-          token: jiraConfig.apiToken,
-        ));
+        service = JiraService(config);
     }
     if (service != null) Service.instance = service;
 
@@ -154,9 +146,9 @@ class _InitializationScreenState extends ConsumerState<_InitializationScreen> {
   final _redmineApiKey = FieldBloc(initialValue: '');
 
   Future<void> _submit() async {
-    await Providers.settingsBin.update((data) {
-      return data.change((c) => c..apiKey = _redmineApiKey.state.value);
-    });
+    // await Providers.settingsBin.update((data) {
+    //   return data.change((c) => c..apiKey = _redmineApiKey.state.value);
+    // });
   }
 
   @override

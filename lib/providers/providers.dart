@@ -4,24 +4,20 @@ import 'package:hasd/apis/redmine/redmine_api.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/youtrack/youtrack_api.dart';
 import 'package:hasd/apis/youtrack/youtrack_dto.dart';
+import 'package:hasd/dto/app_settings_dto.dart';
 import 'package:hasd/dto/youtrack_config_dto.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/services/redmine_service.dart';
 import 'package:hasd/services/service.dart';
+import 'package:hasd/shared/instances.dart';
 import 'package:mekart/mekart.dart';
 
 abstract final class Providers {
   static Service get _service => Service.instance;
   static RedmineApi get _redmineApi => (_service as RedmineService).api;
 
-  static final settingsBin = Bin<AppSettings>(
-    name: 'redmine_settings',
-    deserializer: (data) => AppSettings.fromJson(data as Map<String, dynamic>),
-    fallbackData: const AppSettings(),
-  );
-
-  static final youtrackConfig = StreamProvider((ref) => YoutrackConfigDto.bin.stream);
-  static final settings = StreamProvider((ref) => settingsBin.stream);
+  static final youtrackConfig = StreamProvider((ref) => Instances.bin.youtrackConfig.stream);
+  static final settings = StreamProvider((ref) => Instances.bin.settings.stream);
 
   static final project = FutureProvider.family((ref, int projectId) async {
     return await _service.fetchProject(projectId);
@@ -92,7 +88,7 @@ abstract final class Providers {
     required WorkDuration duration,
   }) async {
     date = DateTime.utc(date.year, date.month, date.day);
-    final youtrackConfig = await YoutrackConfigDto.bin.requireRead();
+    final youtrackConfig = await Instances.bin.youtrackConfig.requireRead();
 
     await _service.createWorkLog(
       issueId: issue.id,
@@ -111,8 +107,9 @@ abstract final class Providers {
 
     ref.invalidate(Providers.times);
 
-    await Providers.settingsBin.update((data) {
-      return data.change((b) => b..defaultTimeActivity = activity?.id);
+    await Instances.bin.runTransaction((tx) async {
+      final settings = await tx.settings.read();
+      await tx.settings.write(settings.change((b) => b..defaultTimeActivity = activity?.id));
     });
   }
 
@@ -120,9 +117,11 @@ abstract final class Providers {
     IssueModel issue,
     IssueSettings Function(IssueSettings settings) updates,
   ) async {
-    await Providers.settingsBin.update((data) {
-      final settings = updates(data.issues['${issue.id}'] ?? const IssueSettings());
-      return data.change((b) => b..issues = data.issues.add('${issue.id}', settings));
+    await Instances.bin.runTransaction((tx) async {
+      final settings = await tx.settings.read();
+      final issueSettings = updates(settings.issues['${issue.id}'] ?? const IssueSettings());
+      await tx.settings.write(
+          settings.change((b) => b..issues = settings.issues.add('${issue.id}', issueSettings)));
     });
   }
 

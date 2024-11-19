@@ -3,40 +3,15 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/jira/jira_dto.dart';
+import 'package:hasd/apis/jira/jql_spec.dart';
 import 'package:hasd/models/models.dart';
-
-sealed class JqlSpec {}
-
-class JqlFilter implements JqlSpec {
-  final String field;
-  final String operator;
-  final String value;
-
-  JqlFilter(this.field, {required String equalTo})
-      : operator = '=',
-        value = equalTo;
-
-  @override
-  String toString() => '$field $operator "$value"';
-}
-
-class JqlExpression implements JqlSpec {
-  final List<JqlSpec> children;
-  final String operator;
-
-  const JqlExpression.and(this.children) : operator = 'AND';
-  const JqlExpression.or(this.children) : operator = 'OR';
-
-  @override
-  String toString() => '(${children.join(' $operator ')})';
-}
 
 abstract final class JiraIssueFields {
   static const String project = 'project';
   static const String parent = 'parent';
 }
 
-// https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/#api-rest-api-3-search-get
+/// https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/#api-rest-api-3-search-get
 class JiraApi {
   static final Codec<String, String> _utf8ToBase64 = utf8.fuse(base64);
 

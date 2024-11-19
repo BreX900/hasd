@@ -1,21 +1,22 @@
-import 'dart:convert';
-
 import 'package:json_annotation/json_annotation.dart';
 import 'package:mek_data_class/mek_data_class.dart';
 import 'package:mekart/mekart.dart';
 
 part '../generated/dto/youtrack_config_dto.g.dart';
 
+extension YoutrackConfigBin on BinSession {
+  BinStore<YoutrackConfigDto?> get youtrackConfig => BinStore(
+        session: this,
+        name: 'youtrack_config.json',
+        codec: const JsonCodecWithIndent('  '),
+        deserializer: (data) => YoutrackConfigDto.fromJson(data as Map<String, dynamic>),
+        fallbackData: null,
+      );
+}
+
 @DataClass(changeable: true)
 @JsonSerializable(createFactory: true, createToJson: true)
 class YoutrackConfigDto with _$YoutrackConfigDto {
-  static final bin = Bin<YoutrackConfigDto?>(
-    name: 'youtrack_config.json',
-    encoder: const JsonEncoder.withIndent('  '),
-    deserializer: (data) => YoutrackConfigDto.fromJson(data as Map<String, dynamic>),
-    fallbackData: null,
-  );
-
   final String baseUrl;
   final String apiToken;
   final String ticketId;

@@ -6,6 +6,7 @@ import 'package:hasd/apis/jira/jira_api.dart';
 import 'package:hasd/apis/jira/jira_dto.dart';
 import 'package:hasd/apis/jira/jira_markup_dto.dart';
 import 'package:hasd/apis/jira/jira_markup_resolver.dart';
+import 'package:hasd/apis/jira/jql_spec.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/dto/jira_config_dto.dart';
 import 'package:hasd/models/models.dart';
@@ -13,12 +14,17 @@ import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
 
 class JiraService implements Service {
-  final JiraApi _jiraApi;
+  final JiraConfigDto config;
+  late final JiraApi api = JiraApi(
+    baseUrl: config.baseUrl,
+    userEmail: config.userEmail,
+    token: config.apiToken,
+  );
 
-  const JiraService(this._jiraApi);
+  JiraService(this.config);
 
   @override
-  Map<String, String> get authorizationHeaders => _jiraApi.authorizationHeaders;
+  Map<String, String> get authorizationHeaders => api.authorizationHeaders;
 
   @override
   Uri joinApiKey(Uri uri) => throw UnimplementedError();
@@ -26,13 +32,13 @@ class JiraService implements Service {
   @override
   Future<int> resolveIssueIdentification(String data) async {
     final issueKey = data.split('/').last;
-    final issue = await _jiraApi.fetchIssue(IdOrUid.uid(issueKey));
+    final issue = await api.fetchIssue(IdOrUid.uid(issueKey));
     return issue.id;
   }
 
   @override
   Future<ProjectModel> fetchProject(int projectId) async {
-    final project = await _jiraApi.fetchProject(IdOrUid.id(projectId));
+    final project = await api.fetchProject(IdOrUid.id(projectId));
     return ProjectModel(
       id: project.id,
       workLogActivities: null,
@@ -41,8 +47,8 @@ class JiraService implements Service {
 
   @override
   Future<IList<Reference>> fetchProjectMembers(int projectId) async {
-    final project = await _jiraApi.fetchProject(IdOrUid.id(projectId));
-    final users = await _jiraApi.fetchProjectMembers(
+    final project = await api.fetchProject(IdOrUid.id(projectId));
+    final users = await api.fetchProjectMembers(
       query: '',
       projectKeys: ISet([project.key]),
     );
@@ -51,14 +57,13 @@ class JiraService implements Service {
 
   @override
   Future<IList<Reference>> fetchAllIssueStatues() async {
-    final statutes = await _jiraApi.fetchIssueStatutes();
+    final statutes = await api.fetchIssueStatutes();
     return statutes.where((e) => e.scope.isEmpty).map((e) => Reference(e.id, e.name)).toIList();
   }
 
   @override
   Future<IList<IssueModel>> fetchIssues() async {
-    final config = await JiraConfigDto.bin.requireRead();
-    final issues = await _jiraApi.searchIssues(
+    final issues = await api.searchIssues(
       jql: JqlExpression.and([
         JqlFilter(JiraIssueFields.project, equalTo: 'TN'),
         JqlFilter(JiraIssueFields.parent, equalTo: '16494'),
@@ -71,15 +76,14 @@ class JiraService implements Service {
 
   @override
   Future<IssueModel> fetchIssue(int issueId) async {
-    final config = await JiraConfigDto.bin.requireRead();
-    final issue = await _jiraApi.fetchIssue(IdOrUid.id(issueId));
+    final issue = await api.fetchIssue(IdOrUid.id(issueId));
     return issue.toModel(config);
   }
 
   @override
   Future<IList<WorkLogModel>> fetchWorkLogs({Date? spentFrom, Date? spentTo, int? issueId}) async {
-    final worklogIds = await _jiraApi.fetchWorkLogsBySince(since: spentFrom?.asDateTime());
-    final workLogs = await _jiraApi.fetchWorkLogsByIds(worklogIds);
+    final worklogIds = await api.fetchWorkLogsBySince(since: spentFrom?.asDateTime());
+    final workLogs = await api.fetchWorkLogsByIds(worklogIds);
 
     return workLogs.where((e) {
       if (issueId != null && e.issueId == issueId) return false;
@@ -117,7 +121,7 @@ class JiraService implements Service {
     required DateTime started,
     required WorkDuration timeSpent,
   }) async {
-    final issue = await _jiraApi.fetchIssue(issueIdOrUid);
+    final issue = await api.fetchIssue(issueIdOrUid);
     final remainingEstimate = issue.timeTracking.remainingEstimate ?? WorkDuration.zero;
     final newEstimate = remainingEstimate - timeSpent;
     final data = JiraWorkLogCreateDto(
@@ -129,7 +133,7 @@ class JiraService implements Service {
       timeSpent: timeSpent,
     );
 
-    await _jiraApi.createWorkLog(
+    await api.createWorkLog(
       issueIdOrUid,
       newEstimate: WorkDuration(seconds: max(newEstimate.inSeconds, 0)),
       data: data,

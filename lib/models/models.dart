@@ -26,6 +26,7 @@ class IdOrUid {
   int get hashCode => value.hashCode;
 }
 
+@immutable
 class WorkDuration {
   static const int secondsPerMinute = 60;
   static const int minutesPerHour = 60;
@@ -58,6 +59,14 @@ class WorkDuration {
   bool operator <(WorkDuration other) => _value < other._value;
 
   Duration get duration => Duration(seconds: _value);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WorkDuration && runtimeType == other.runtimeType && _value == other._value;
+
+  @override
+  int get hashCode => _value.hashCode;
 
   factory WorkDuration.fromJson(int value) => WorkDuration._(value);
   int toJson() => _value;

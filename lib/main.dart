@@ -7,8 +7,6 @@ import 'package:hasd/providers/providers.dart';
 import 'package:hasd/screens/app.dart';
 import 'package:logging/logging.dart';
 import 'package:mek/mek.dart';
-import 'package:mekart/mekart.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
@@ -16,8 +14,6 @@ void main() async {
 
   Logger.root.reportRecords();
   Observers.attachAll();
-
-  BinEngine.instance = _BinEngine();
 
   if (!kIsWeb) {
     await WindowManager.instance.ensureInitialized();
@@ -43,12 +39,4 @@ void main() async {
       settings: await container.read(Providers.settings.future),
     ),
   ));
-}
-
-class _BinEngine extends BinEngineBase {
-  @override
-  Future<String?> getDirectoryPath() async {
-    final directory = await getApplicationSupportDirectory();
-    return directory.path;
-  }
 }

@@ -7,6 +7,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
 import 'package:hasd/apis/redmine/redmine_serializable.dart';
+import 'package:hasd/dto/app_settings_dto.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/providers/providers.dart';
 import 'package:hasd/shared/utils.dart';

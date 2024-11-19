@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hasd/apis/redmine/redmine_dto.dart';
+import 'package:hasd/dto/app_settings_dto.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/providers/providers.dart';
 import 'package:hasd/screens/app.dart';
