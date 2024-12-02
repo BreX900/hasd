@@ -19,12 +19,10 @@ extension YoutrackConfigBin on BinSession {
 class YoutrackConfigDto with _$YoutrackConfigDto {
   final String baseUrl;
   final String apiToken;
-  final String ticketId;
 
   const YoutrackConfigDto({
     required this.baseUrl,
     required this.apiToken,
-    required this.ticketId,
   });
 
   factory YoutrackConfigDto.fromJson(Map<String, dynamic> map) => _$YoutrackConfigDtoFromJson(map);

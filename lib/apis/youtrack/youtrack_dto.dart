@@ -1,18 +1,25 @@
 import 'package:hasd/apis/jira/jira_dto.dart';
+import 'package:hasd/models/models.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part '../../generated/apis/youtrack/youtrack_dto.g.dart';
 
 @YoutrackSerializable(createFactory: true)
 class IssueDto {
+  final String id;
+  final int numberInProject;
   final ProjectDto project;
 
-  const IssueDto({required this.project});
+  const IssueDto({
+    required this.id,
+    required this.numberInProject,
+    required this.project,
+  });
 
   factory IssueDto.fromJson(Map<String, dynamic> map) => _$IssueDtoFromJson(map);
 }
 
-@YoutrackSerializable(createFactory: true)
+@YoutrackSerializable(fieldRename: FieldRename.snake, createFactory: true)
 class ProjectDto {
   final String id;
   final String name;
@@ -25,9 +32,9 @@ class ProjectDto {
   factory ProjectDto.fromJson(Map<String, dynamic> map) => _$ProjectDtoFromJson(map);
 }
 
-@YoutrackSerializable(createFactory: true)
+@YoutrackSerializable(fieldRename: FieldRename.snake, createFactory: true)
 class IssueWorkItemDto {
-  final DurationValueDto duration;
+  final WorkDuration duration;
   final DateTime date;
   final String? text;
   final IssueDto issue;
@@ -42,9 +49,9 @@ class IssueWorkItemDto {
   factory IssueWorkItemDto.fromJson(Map<String, dynamic> map) => _$IssueWorkItemDtoFromJson(map);
 }
 
-@YoutrackSerializable(createToJson: true)
+@YoutrackSerializable(fieldRename: FieldRename.snake, createToJson: true)
 class IssueWorkItemCreateDto {
-  final DurationValueDto duration;
+  final WorkDuration duration;
   final DateTime date;
   final String? text;
 
@@ -57,27 +64,31 @@ class IssueWorkItemCreateDto {
   Map<String, dynamic> toJson() => _$IssueWorkItemCreateDtoToJson(this);
 }
 
-@YoutrackSerializable(createFactory: true, createToJson: true)
-class DurationValueDto {
-  final int minutes;
+// @YoutrackSerializable(createFactory: true, createToJson: true)
+// class DurationValueDto {
+//   final int minutes;
+//
+//   const DurationValueDto({
+//     required this.minutes,
+//   });
+//
+//   factory DurationValueDto.fromJson(Map<String, dynamic> map) => _$DurationValueDtoFromJson(map);
+//   Map<String, dynamic> toJson() => _$DurationValueDtoToJson(this);
+// }
 
-  const DurationValueDto({
-    required this.minutes,
-  });
-
-  factory DurationValueDto.fromJson(Map<String, dynamic> map) => _$DurationValueDtoFromJson(map);
-  Map<String, dynamic> toJson() => _$DurationValueDtoToJson(this);
-}
-
-const youtrackConverters = <TypedJsonConverter>[MinutesConverter(), DateTimeConverter()];
+const youtrackConverters = <TypedJsonConverter>[
+  MinutesConverter(),
+  DateTimeConverter(),
+  WorkDurationConverter()
+];
 
 class YoutrackSerializable extends JsonSerializable {
   const YoutrackSerializable({
     super.createFactory = false,
     super.createToJson = false,
     super.includeIfNull,
+    super.fieldRename,
   }) : super(
-          fieldRename: FieldRename.snake,
           converters: youtrackConverters,
         );
 }
@@ -100,4 +111,14 @@ class DateTimeConverter extends TypedJsonConverter<DateTime, int> {
 
   @override
   int toJson(DateTime object) => object.millisecondsSinceEpoch;
+}
+
+class WorkDurationConverter extends TypedJsonConverter<WorkDuration, Map<String, dynamic>> {
+  const WorkDurationConverter();
+
+  @override
+  WorkDuration fromJson(Map<String, dynamic> json) => WorkDuration(minutes: json['minutes']);
+
+  @override
+  Map<String, dynamic> toJson(WorkDuration object) => {'minutes': object.inMinutes};
 }

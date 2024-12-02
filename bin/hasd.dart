@@ -21,17 +21,23 @@ import 'package:hasd/services/jira_service.dart';
 import 'package:hasd/services/service.dart';
 import 'package:mekart/mekart.dart';
 // ignore: depend_on_referenced_packages
+import 'package:mekcli/mekcli.dart';
+// ignore: depend_on_referenced_packages
 import 'package:meta/meta.dart';
 
 void main(List<String> args) async {
   final runner = CommandRunner('hasd', '')
     ..addCommand(_ConfigCommand())
-    ..addCommand(_ConfigYoutrackCommand())
-    ..addCommand(_ConfigJiraCommand())
     ..addCommand(_CreteCommand())
     ..addCommand(_FetchCommand());
 
-  await runner.run(args);
+  try {
+    await runner.run(args);
+    // ignore: avoid_catching_errors
+  } on ArgumentError catch (error) {
+    stderr.write(error);
+    exit(-1);
+  }
 }
 
 final _bin = BinConnection(BinEngine(directoryPath: applicationConfigHome('com.doonties.hasd')));
@@ -41,6 +47,21 @@ final Logger _logger = Logger.standard(ansi: _ansi);
 class _ConfigCommand extends Command<void> {
   @override
   String get name => 'config';
+
+  @override
+  String get description => 'Sub-commands to handle the configurations.';
+
+  _ConfigCommand() {
+    addSubcommand(_ConfigPrintCommand());
+    addSubcommand(_ConfigYoutrackCommand());
+    addSubcommand(_ConfigJiraCommand());
+    addSubcommand(_ConfigProjectCommand());
+  }
+}
+
+class _ConfigPrintCommand extends Command<void> {
+  @override
+  String get name => 'show';
 
   @override
   String get description => 'Print configurations.';
@@ -64,9 +85,37 @@ class _ConfigCommand extends Command<void> {
   }
 }
 
+class _ConfigProjectCommand extends Command<void> {
+  @override
+  String get name => 'jira-project';
+
+  @override
+  String get description => 'Configure projects.';
+
+  _ConfigProjectCommand() {
+    argParser
+      ..addOption('key', mandatory: true)
+      ..addOption('youtrack-issue', mandatory: true);
+  }
+
+  @override
+  Future<void> run() async {
+    final jiraProjectKey = argResults!.requireOption('key');
+    final youtrackIssueId = argResults!.requireOption('youtrack-issue');
+
+    await _bin.runTransaction((tx) async {
+      final config = await tx.jiraConfig.requireRead();
+      await tx.jiraConfig.write(config.change((c) => c
+        ..youtrackIssueByProject =
+            config.youtrackIssueByProject.add(jiraProjectKey, youtrackIssueId)));
+    });
+    print('Configured Jira "$jiraProjectKey" project to YouTrack $youtrackIssueId issue.');
+  }
+}
+
 class _ConfigYoutrackCommand extends Command<void> {
   @override
-  String get name => 'config-youtrack';
+  String get name => 'youtrack';
 
   @override
   String get description => 'Configure YouTrack.';
@@ -74,8 +123,7 @@ class _ConfigYoutrackCommand extends Command<void> {
   _ConfigYoutrackCommand() {
     argParser
       ..addOption('base-url', mandatory: true)
-      ..addOption('api-token', mandatory: true)
-      ..addOption('ticket', mandatory: true);
+      ..addOption('api-token', mandatory: true);
   }
 
   @override
@@ -85,14 +133,13 @@ class _ConfigYoutrackCommand extends Command<void> {
     await _bin.youtrackConfig.write(YoutrackConfigDto(
       baseUrl: argResults.requireOption('base-url'),
       apiToken: argResults.requireOption('api-token'),
-      ticketId: argResults.requireOption('ticket'),
     ));
   }
 }
 
 class _ConfigJiraCommand extends Command<void> {
   @override
-  String get name => 'config-jira';
+  String get name => 'jira';
 
   @override
   String get description => 'Configure Jira.';
@@ -119,13 +166,21 @@ class _ConfigJiraCommand extends Command<void> {
 JiraService get _service => Service.instance as JiraService;
 YoutrackApi get _youtrackApi => YoutrackApi.instance!;
 
+enum _FetchType { short, daily, monthly }
+
+// class _Fetch {
+//   final Iterable<WorkDuration>
+// }
+
 abstract class _CommandWithDependencies extends Command<void> {
+  // late final ConfigDto config;
   late final YoutrackConfigDto youtrackConfig;
   late final JiraConfigDto jiraConfig;
 
   @mustCallSuper
   @override
   Future<void> run() async {
+    // config = await _bin.config.read();
     youtrackConfig = await _bin.youtrackConfig.requireRead();
     jiraConfig = await _bin.jiraConfig.requireRead();
 
@@ -134,6 +189,130 @@ abstract class _CommandWithDependencies extends Command<void> {
       token: youtrackConfig.apiToken,
     );
     Service.instance = JiraService(jiraConfig);
+  }
+
+  Future<void> _fetch({required _FetchType type}) async {
+    WorkDuration sumYoutrack(WorkDuration total, IssueWorkItemDto issue) => total + issue.duration;
+    WorkDuration sum(WorkDuration total, WorkLogModel issue) => total + issue.timeSpent;
+
+    for (var retryCount = 0; retryCount < 5; retryCount++) {
+      final now = Date.timestamp();
+      final monthDate = now.copyWith(day: 1);
+      final yearDate = now.copyWith(day: 1).copySubtracting(months: 1);
+
+      final youtrackProjectsWorkLogs = await _youtrackApi.fetchIssueWorkItems(startDate: yearDate);
+      final youtrackWorkLogs = youtrackProjectsWorkLogs.where((e) {
+        return e.issue.project.name == 'Toonie';
+        final projectUid = e.issue.project.name.toUpperCase();
+        return jiraConfig.youtrackIssueByProject.values
+            .contains('$projectUid-${e.issue.numberInProject}');
+      }).toList();
+      final youtrackTimes = youtrackWorkLogs.map((e) => e.duration);
+      final youtrackAllTimeSpent = youtrackWorkLogs.fold(WorkDuration.zero, sumYoutrack);
+
+      final jiraWorkLogs = await _service.fetchWorkLogs(spentFrom: yearDate);
+      final jiraTimes = jiraWorkLogs.map((e) => e.spentOn);
+      final jiraAllTimeSpent = jiraWorkLogs.fold(WorkDuration.zero, sum);
+
+      // between()
+      //
+      // final youtrackMonthlyWorkLogs =
+      //     youtrackWorkLogs.where((e) => e.date.asDate() == monthDate).toList();
+      // final youtrackMonthlyTimeSpent = youtrackDailyWorkLogs.fold(WorkDuration.zero, sumYoutrack);
+      //
+      // final jiraMonthlyWorkLogs = jiraWorkLogs.where((e) => e.spentOn == monthDate).toList();
+      // final jiraMonthlyTimeSpent = jiraDailyWorkLogs.fold(WorkDuration.zero, sum);
+
+      switch (type) {
+        case _FetchType.short:
+          final youtrackDailyWorkLogs =
+              youtrackWorkLogs.where((e) => e.date.asDate() == monthDate).toList();
+          final youtrackDailyTimeSpent = youtrackDailyWorkLogs.fold(WorkDuration.zero, sumYoutrack);
+
+          final jiraDailyWorkLogs = jiraWorkLogs.where((e) => e.spentOn == monthDate).toList();
+          final jiraDailyTimeSpent = jiraDailyWorkLogs.fold(WorkDuration.zero, sum);
+
+          print(const Table(verticalDivisor: ' | ').render([
+            ['Project', 'Monthly', 'Daily'],
+            [
+              'Youtrack',
+              '$youtrackAllTimeSpent (${youtrackWorkLogs.length})',
+              '$youtrackDailyTimeSpent (${youtrackDailyWorkLogs.length})'
+            ],
+            [
+              'Jira',
+              '$jiraAllTimeSpent (${jiraWorkLogs.length})',
+              '$jiraDailyTimeSpent (${jiraDailyWorkLogs.length})'
+            ],
+          ]));
+        case _FetchType.daily:
+          final monthDates = [
+            for (var offset = monthDate;
+                offset.isBefore(now) || offset == now;
+                offset = offset.copyAdding(days: 1))
+              if (offset.weekday != DateTime.saturday && offset.weekday != DateTime.sunday) offset
+          ];
+          print(const Table(verticalDivisor: ' | ').render([
+            ['Project', for (final date in monthDates) date.day],
+            [
+              'Youtrack',
+              for (final date in monthDates)
+                youtrackWorkLogs.fold<WorkDuration>(WorkDuration.zero, (total, workLog) {
+                  if (workLog.date.asDate() != date) return total;
+                  return total + workLog.duration;
+                }).toString(short: true)
+            ],
+            [
+              'Jira',
+              for (final date in monthDates)
+                jiraWorkLogs.fold<WorkDuration>(WorkDuration.zero, (total, workLog) {
+                  if (workLog.spentOn != date) return total;
+                  return total + workLog.timeSpent;
+                }).toString(short: true)
+            ],
+          ]));
+          return;
+        case _FetchType.monthly:
+          final monthDates = [
+            for (var offset = yearDate;
+                offset.isBefore(now) || offset == now;
+                offset = offset.copyAdding(months: 1))
+              offset
+          ];
+          print(const Table(verticalDivisor: ' | ').render([
+            [yearDate.year, for (final date in monthDates) date.month],
+            [
+              'Youtrack',
+              for (final date in monthDates)
+                youtrackWorkLogs.fold<WorkDuration>(WorkDuration.zero, (total, workLog) {
+                  final workLogDate = workLog.date.asDate();
+                  if (workLogDate.isBefore(date)) return total;
+                  if (workLogDate.isAfter(date.copyAdding(months: 1))) return total;
+
+                  return total + workLog.duration;
+                }).toString(short: true)
+            ],
+            [
+              'Jira',
+              for (final date in monthDates)
+                jiraWorkLogs.fold<WorkDuration>(WorkDuration.zero, (total, workLog) {
+                  final workLogDate = workLog.spentOn;
+                  if (workLogDate.isBefore(date)) return total;
+                  if (workLogDate.isAfter(date.copyAdding(months: 1))) return total;
+
+                  return total + workLog.timeSpent;
+                }).toString(short: true)
+            ],
+          ]));
+          return;
+      }
+
+      if (youtrackAllTimeSpent == jiraAllTimeSpent) return;
+
+      await _logger.wait(const Duration(seconds: 3), 'Retry ${retryCount + 1}');
+    }
+
+    throw StateError('Times is different!');
   }
 }
 
@@ -146,10 +325,11 @@ class _CreteCommand extends _CommandWithDependencies {
 
   _CreteCommand() {
     argParser
-      ..addOption('ticket', mandatory: true)
+      ..addOption('issue', mandatory: true)
       ..addOption('hours')
       ..addOption('minutes')
-      ..addOption('date');
+      ..addOption('date')
+      ..addOption('comment');
   }
 
   @override
@@ -157,88 +337,52 @@ class _CreteCommand extends _CommandWithDependencies {
     await super.run();
 
     final argResults = this.argResults!;
-    var ticketId = argResults.option('ticket')!;
-    if (ticketId.startsWith('http')) ticketId = ticketId.split('/').last;
-    var dateTime =
-        argResults.wasParsed('date') ? DateTime.parse(argResults.option('date')!) : DateTime.now();
+    var issueId = argResults.option('issue')!;
+    if (issueId.startsWith('http')) issueId = issueId.split('/').last;
+    var dateTime = argResults.value('date', DateTime.parse) ?? DateTime.now();
     dateTime = dateTime.copyWith(hour: 9);
-    final hours = argResults.wasParsed('hours') ? int.parse(argResults.option('hours')!) : null;
-    final minutes =
-        argResults.wasParsed('minutes') ? int.parse(argResults.option('minutes')!) : null;
+    final hours = argResults.value('hours', int.parse);
+    final minutes = argResults.value('minutes', int.parse);
+    final comment = argResults.option('comment');
 
     final duration = WorkDuration(hours: hours ?? 0, minutes: minutes ?? 0);
 
-    await _fetch();
+    final issue = await _service.api.fetchIssue(IdOrUid.uid(issueId));
 
-    print('Log "$duration" to issue "$ticketId"?');
+    final youtrackIssueId = jiraConfig.youtrackIssueByProject[issue.project.key];
+    if (youtrackIssueId == null) {
+      throw ArgumentError('Please configure project using "config project" command.');
+    }
+
+    await _fetch(type: _FetchType.short);
+
+    print('Log "$duration" to issue "$issueId" at ${dateTime.asDate()}: ${issue.summary}"?');
+    if (comment != null) print(comment.split('\n').map((e) => '> $e').join('\n'));
     final line = stdin.readLineSync();
     if (line?.toLowerCase() != 'y') return;
 
     await _service.createWorkLogV2(
-      issueIdOrUid: IdOrUid.uid(ticketId),
+      issueIdOrUid: IdOrUid.uid(issueId),
       activityId: null,
       started: dateTime,
       timeSpent: duration,
+      comment: comment,
     );
     await _youtrackApi.createIssueWorkItem(
-      youtrackConfig.ticketId,
+      youtrackIssueId,
       IssueWorkItemCreateDto(
         date: dateTime,
-        duration: DurationValueDto(minutes: duration.inMinutes),
-        text: '${jiraConfig.baseUrl}/browse/$ticketId',
+        duration: WorkDuration(minutes: duration.inMinutes),
+        text: '${jiraConfig.baseUrl}/browse/$issueId\n'
+            '${issue.summary}'
+            '${comment != null ? '\n$comment' : ''}',
       ),
     );
     print('Logged!');
 
-    await _logger.wait(const Duration(seconds: 48), 'Checking time logged');
-    await _fetch();
+    await _logger.wait(const Duration(seconds: 60), 'Checking time logged waiting Jira cache');
+    await _fetch(type: _FetchType.short);
   }
-}
-
-Future<void> _fetch() async {
-  for (var retryCount = 0; retryCount < 5; retryCount++) {
-    final startDate = DateTime.now().copyDateWith(day: 1).asDate();
-    final endDate = DateTime.now().add(const Duration(days: 1)).asDate();
-    final now = Date.timestamp();
-
-    final youtrackWorkLogs = await _youtrackApi.fetchIssueWorkItems(
-      startDate: startDate,
-      endDate: endDate,
-    );
-    final toonieWorkLogs = youtrackWorkLogs.where((e) {
-      return e.issue.project.id == '0-22';
-    }).toList();
-
-    final youtrackAllTimeSpent = toonieWorkLogs.fold(WorkDuration.zero, (total, workLog) {
-      return total + WorkDuration(minutes: workLog.duration.minutes);
-    });
-    final youtrackTodayWorkLogs = toonieWorkLogs.where((e) => e.date.asDate() == now).toList();
-    final youtrackTodayTimeSpent = youtrackTodayWorkLogs.fold(WorkDuration.zero, (total, workLog) {
-      return total + WorkDuration(minutes: workLog.duration.minutes);
-    });
-
-    final jiraWorkLogs = await _service.fetchWorkLogs(spentFrom: startDate, spentTo: endDate);
-
-    final jiraAllTimeSpent = jiraWorkLogs.fold(WorkDuration.zero, (total, workLog) {
-      return total + workLog.timeSpent;
-    });
-    final jiraTodayWorkLogs = jiraWorkLogs.where((e) => e.spentOn == now).toList();
-    final jiraTodayTimeSpent = jiraTodayWorkLogs.fold(WorkDuration.zero, (total, workLog) {
-      return total + workLog.timeSpent;
-    });
-
-    print('Project  | All               | Today');
-    print(
-        'Youtrack | $youtrackAllTimeSpent (${toonieWorkLogs.length}) | $youtrackTodayTimeSpent (${youtrackTodayWorkLogs.length})');
-    print(
-        'Jira     | $jiraAllTimeSpent (${jiraWorkLogs.length}) | $jiraTodayTimeSpent (${jiraTodayWorkLogs.length})');
-
-    if (youtrackAllTimeSpent == jiraAllTimeSpent) return;
-
-    await _logger.wait(const Duration(seconds: 5), 'Retry ${retryCount + 1}');
-  }
-
-  throw StateError('Times is different!');
 }
 
 class _FetchCommand extends _CommandWithDependencies {
@@ -248,25 +392,46 @@ class _FetchCommand extends _CommandWithDependencies {
   @override
   String get description => 'Fetch all log work times';
 
+  _FetchCommand() {
+    argParser.addOption(
+      'type',
+      allowed: [_FetchType.daily.name, _FetchType.monthly.name],
+      defaultsTo: _FetchType.daily.name,
+    );
+  }
+
   @override
   Future<void> run() async {
     await super.run();
 
-    await _fetch();
+    final type = argResults!
+        .requireValue('type', (value) => _FetchType.values.firstWhere((e) => e.name == value));
+
+    await _fetch(type: type);
   }
 }
 
 extension on ArgResults {
   String requireOption(String name) {
     final option = this.option(name);
-    if (option == null) throw ArgumentError('Option $name is mandatory.');
+    if (option == null) throw ArgumentError('Option $name is mandatory.', name);
     return option;
+  }
+
+  T? value<T>(String name, T Function(String value) converter) {
+    final option = this.option(name);
+    return option != null ? converter(option) : null;
+  }
+
+  T requireValue<T>(String name, T Function(String value) converter) {
+    final option = requireOption(name);
+    return converter(option);
   }
 }
 
 extension on Logger {
   Future<void> wait(Duration duration, String message) async {
-    final progress = timedProgress('$message in ${duration.toShortString()}');
+    final progress = timedProgress('$message in ${duration.toShortString(milliseconds: false)}');
     await Future<void>.delayed(duration);
     progress.finish();
   }
@@ -274,23 +439,12 @@ extension on Logger {
   Progress timedProgress(String message) => _TimedProgress(ansi, message);
 }
 
-extension on Duration {
-  String toShortString({bool all = false}) {
-    return [
-      if (all || days > 0) '${days}d',
-      if (all || hours > 0) '${hours}h',
-      if (all || minutes > 0) '${minutes}m',
-      if (all || seconds > 0) '${seconds}s',
-    ].join(' ');
-  }
-}
-
 class _TimedProgress extends Progress {
   final Ansi ansi;
   late final Timer _timer;
 
   _TimedProgress(this.ansi, String message) : super(message) {
-    _timer = Timer.periodic(const Duration(milliseconds: 80), (t) {
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
       _updateDisplay();
     });
     stdout.write('$message... '.padRight(40));

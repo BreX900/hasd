@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/jira/jira_api.dart';
 import 'package:hasd/apis/jira/jira_dto.dart';
@@ -112,6 +113,7 @@ class JiraService implements Service {
       activityId: activityId,
       started: started,
       timeSpent: timeSpent,
+      comment: null,
     );
   }
 
@@ -120,6 +122,7 @@ class JiraService implements Service {
     required int? activityId,
     required DateTime started,
     required WorkDuration timeSpent,
+    required String? comment,
   }) async {
     final issue = await api.fetchIssue(issueIdOrUid);
     final remainingEstimate = issue.timeTracking.remainingEstimate ?? WorkDuration.zero;
@@ -131,6 +134,23 @@ class JiraService implements Service {
           .copyWith(hour: 9)
           .toUtc(),
       timeSpent: timeSpent,
+      comment: comment != null
+          ? JiraMarkupDocDto(
+              content: IList([
+                JiraMarkupParagraphDto(
+                  content: comment.split('\n').map((line) {
+                    return JiraMarkupTextDto(
+                      text: line,
+                      marks: const IList.empty(),
+                    );
+                  }).expandIndexed((index, child) sync* {
+                    if (index > 0) yield const JiraMarkupHardBreakDto();
+                    yield child;
+                  }).toIList(),
+                ),
+              ]),
+            )
+          : null,
     );
 
     await api.createWorkLog(
@@ -182,7 +202,7 @@ extension on JiraIssueDto {
       JiraMarkupDocDto() => data.content.fold(attachments, _filterAttachments),
       JiraMarkupHardBreakDto() => attachments,
       JiraMarkupMediaSingleDto() => data.content.fold(attachments, _filterAttachments),
-      JiraMarkupMediaDto() => attachments.removeWhere((e) => e.filename == data.alt),
+      JiraMarkupMediaDto() => attachments.removeWhere((e) => e.filename == data.attrs.alt),
       JiraMarkupMediaInlineDto() => attachments,
       JiraMarkupMentionDto() => attachments,
       JiraMarkupOrderedListDto() => data.content.fold(attachments, _filterAttachments),

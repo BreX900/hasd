@@ -100,7 +100,7 @@ abstract final class Providers {
       youtrackConfig.ticketId,
       IssueWorkItemCreateDto(
         date: date,
-        duration: DurationValueDto(minutes: duration.inMinutes),
+        duration: duration,
         text: issue.hrefUrl,
       ),
     );

@@ -26,8 +26,11 @@ class YoutrackApi {
     final response = await _httpClient.get<List<Object?>>(
       '/workItems',
       queryParameters: youtrackConverters.encodeQueryParameters({
-        'fields':
-            'created,duration(presentation,minutes),author(name),creator(name),date,id,issue(project(id,name))',
+        'fields': 'created,duration(presentation,minutes),'
+            'author(name),'
+            'creator(name),'
+            'date,id,'
+            'issue(id,numberInProject,project(id,name))',
         'startDate': startDate,
         'endDate': endDate,
         'author': 'me',

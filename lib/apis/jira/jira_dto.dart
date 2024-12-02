@@ -339,10 +339,12 @@ class JiraWorkLogCreateDto {
   final DateTime started;
   @JsonKey(name: 'timeSpentSeconds')
   final WorkDuration timeSpent;
+  final JiraMarkupDocDto? comment;
 
   const JiraWorkLogCreateDto({
     required this.started,
     required this.timeSpent,
+    required this.comment,
   });
 
   Map<String, dynamic> toJson() => _$JiraWorkLogCreateDtoToJson(this);

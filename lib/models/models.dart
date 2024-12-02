@@ -72,7 +72,21 @@ class WorkDuration {
   int toJson() => _value;
 
   @override
-  String toString() => '${days}d ${hours}h ${minutes}m ${seconds}s';
+  String toString({bool short = false}) {
+    final entries = [
+      if (!short || days > 0) '${days}d',
+      if (!short || hours > 0) '${hours}h',
+      if (!short || minutes > 0) '${minutes}m',
+    ];
+    return [
+      ...entries,
+      if (!short || seconds > 0 || entries.isEmpty) '${seconds}s',
+    ].join(' ');
+  }
+}
+
+extension WorkDurationIterable on Iterable<WorkDuration> {
+  WorkDuration get sum => fold(WorkDuration.zero, (total, curr) => total + curr);
 }
 
 extension DurationWorkExtensions on Duration {

@@ -25,38 +25,53 @@ enum JiraMarkupType {
   blockquote;
 
   factory JiraMarkupType.fromJson(String source) => $enumDecode(_$JiraMarkupTypeEnumMap, source);
+  String toJson() => _$JiraMarkupTypeEnumMap[this]!;
 }
 
 sealed class JiraMarkupDto {
+  @JsonKey(includeToJson: true, name: 'type')
+  JiraMarkupType get type$ => _serializables.entries.firstWhere((e) => e.value.accept(this)).key;
+
   const JiraMarkupDto();
+
+  static const _serializables = {
+    JiraMarkupType.text: _<JiraMarkupTextDto>(JiraMarkupTextDto.fromJson),
+    JiraMarkupType.paragraph: _<JiraMarkupParagraphDto>(JiraMarkupParagraphDto.fromJson),
+    JiraMarkupType.hardBreak: _<JiraMarkupHardBreakDto>(JiraMarkupHardBreakDto.fromJson),
+    JiraMarkupType.doc: _<JiraMarkupDocDto>(JiraMarkupDocDto.fromJson),
+    JiraMarkupType.mediaSingle: _<JiraMarkupMediaSingleDto>(JiraMarkupMediaSingleDto.fromJson),
+    JiraMarkupType.media: _<JiraMarkupMediaDto>(JiraMarkupMediaDto.fromJson),
+    JiraMarkupType.mediaInline: _<JiraMarkupMediaInlineDto>(JiraMarkupMediaInlineDto.fromJson),
+    JiraMarkupType.mention: _<JiraMarkupMentionDto>(JiraMarkupMentionDto.fromJson),
+    JiraMarkupType.orderedList: _<JiraMarkupOrderedListDto>(JiraMarkupOrderedListDto.fromJson),
+    JiraMarkupType.bulletList: _<JiraMarkupBulletListDto>(JiraMarkupBulletListDto.fromJson),
+    JiraMarkupType.listItem: _<JiraMarkupListItemDto>(JiraMarkupListItemDto.fromJson),
+    JiraMarkupType.inlineCard: _<JiraMarkupInlineCardDto>(JiraMarkupInlineCardDto.fromJson),
+    JiraMarkupType.codeBlock: _<JiraMarkupCodeBlockDto>(JiraMarkupCodeBlockDto.fromJson),
+    JiraMarkupType.heading: _<JiraMarkupHeadingDto>(JiraMarkupHeadingDto.fromJson),
+    JiraMarkupType.blockquote: _<JiraMarkupHardBreakDto>(JiraMarkupHardBreakDto.fromJson),
+  };
 
   factory JiraMarkupDto.fromJson(Map<String, dynamic> map) {
     final data = {...map};
     final rawType = data.remove('type');
     final type = JiraMarkupType.fromJson(rawType);
-    return switch (type) {
-      JiraMarkupType.text => JiraMarkupTextDto.fromJson(data),
-      JiraMarkupType.paragraph => JiraMarkupParagraphDto.fromJson(data),
-      JiraMarkupType.hardBreak => JiraMarkupHardBreakDto.fromJson(data),
-      JiraMarkupType.doc => JiraMarkupDocDto.fromJson(data),
-      JiraMarkupType.mediaSingle => JiraMarkupMediaSingleDto.fromJson(data),
-      JiraMarkupType.media => JiraMarkupMediaDto.fromJson(data),
-      JiraMarkupType.mediaInline => JiraMarkupMediaInlineDto.fromJson(data),
-      JiraMarkupType.mention => JiraMarkupMentionDto.fromJson(data),
-      JiraMarkupType.orderedList => JiraMarkupOrderedListDto.fromJson(data),
-      JiraMarkupType.bulletList => JiraMarkupBulletListDto.fromJson(data),
-      JiraMarkupType.listItem => JiraMarkupListItemDto.fromJson(data),
-      JiraMarkupType.inlineCard => JiraMarkupInlineCardDto.fromJson(data),
-      JiraMarkupType.codeBlock => JiraMarkupCodeBlockDto.fromJson(data),
-      JiraMarkupType.heading => JiraMarkupHeadingDto.fromJson(data),
-      JiraMarkupType.blockquote => const JiraMarkupHardBreakDto(),
-    };
+    final serializable = _serializables[type]!;
+    return serializable.fromJson(data);
   }
+
+  Map<String, dynamic> toJson();
 }
 
-const _disallowUnrecognizedKeys = true;
+class _<T> {
+  final T Function(Map<String, dynamic>) fromJson;
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+  bool accept(Object object) => object is T;
+
+  const _(this.fromJson);
+}
+
+@_Serializable()
 class JiraMarkupTextDto extends JiraMarkupDto {
   final String text;
   @JsonKey(defaultValue: IList<IMap<String, dynamic>>.empty)
@@ -65,9 +80,11 @@ class JiraMarkupTextDto extends JiraMarkupDto {
   const JiraMarkupTextDto({required this.text, required this.marks});
 
   factory JiraMarkupTextDto.fromJson(Map<String, dynamic> map) => _$JiraMarkupTextDtoFromJson(map);
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupTextDtoToJson(this)..remove('marks');
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupParagraphDto extends JiraMarkupDto {
   final IList<JiraMarkupDto> content;
 
@@ -75,21 +92,26 @@ class JiraMarkupParagraphDto extends JiraMarkupDto {
 
   factory JiraMarkupParagraphDto.fromJson(Map<String, dynamic> map) =>
       _$JiraMarkupParagraphDtoFromJson(map);
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupParagraphDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupDocDto extends JiraMarkupDto {
-  final int? version;
+  final int version;
   final IList<JiraMarkupDto> content;
 
   const JiraMarkupDocDto({
-    required this.version,
+    this.version = 1,
     required this.content,
   });
 
   factory JiraMarkupDocDto.fromJson(Map<String, dynamic> map) => _$JiraMarkupDocDtoFromJson(map);
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupDocDtoToJson(this);
 }
 
+@_Serializable()
 class JiraMarkupHardBreakDto extends JiraMarkupDto {
   const JiraMarkupHardBreakDto();
 
@@ -97,26 +119,49 @@ class JiraMarkupHardBreakDto extends JiraMarkupDto {
     assert(map.isEmpty, jsonEncode(map));
     return const JiraMarkupHardBreakDto();
   }
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupHardBreakDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupMediaSingleDto extends JiraMarkupDto {
-  final int? width;
-  final String layout;
+  final JiraMarkupMediaSingleAttrsDto attrs;
   final IList<JiraMarkupDto> content;
 
-  const JiraMarkupMediaSingleDto({
-    required this.width,
-    required this.layout,
-    required this.content,
-  });
+  const JiraMarkupMediaSingleDto({required this.attrs, required this.content});
 
   factory JiraMarkupMediaSingleDto.fromJson(Map<String, dynamic> map) =>
-      _$JiraMarkupMediaSingleDtoFromJson(map.up('attrs'));
+      _$JiraMarkupMediaSingleDtoFromJson(map);
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupMediaSingleDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
+class JiraMarkupMediaSingleAttrsDto {
+  final int? width;
+  final String layout;
+
+  const JiraMarkupMediaSingleAttrsDto({required this.width, required this.layout});
+
+  factory JiraMarkupMediaSingleAttrsDto.fromJson(Map<String, dynamic> map) =>
+      _$JiraMarkupMediaSingleAttrsDtoFromJson(map);
+  Map<String, dynamic> toJson() => _$JiraMarkupMediaSingleAttrsDtoToJson(this);
+}
+
+@_Serializable()
 class JiraMarkupMediaDto extends JiraMarkupDto {
+  final JiraMarkupMediaAttrsDto attrs;
+
+  const JiraMarkupMediaDto({required this.attrs});
+
+  factory JiraMarkupMediaDto.fromJson(Map<String, dynamic> map) =>
+      _$JiraMarkupMediaDtoFromJson(map);
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupMediaDtoToJson(this);
+}
+
+@_Serializable()
+class JiraMarkupMediaAttrsDto {
   final String type;
   final String id;
   final String alt;
@@ -124,7 +169,7 @@ class JiraMarkupMediaDto extends JiraMarkupDto {
   final int height;
   final int width;
 
-  const JiraMarkupMediaDto({
+  const JiraMarkupMediaAttrsDto({
     required this.type,
     required this.id,
     required this.alt,
@@ -133,27 +178,41 @@ class JiraMarkupMediaDto extends JiraMarkupDto {
     required this.width,
   });
 
-  factory JiraMarkupMediaDto.fromJson(Map<String, dynamic> map) =>
-      _$JiraMarkupMediaDtoFromJson(map.up('attrs'));
+  factory JiraMarkupMediaAttrsDto.fromJson(Map<String, dynamic> map) =>
+      _$JiraMarkupMediaAttrsDtoFromJson(map);
+  Map<String, dynamic> toJson() => _$JiraMarkupMediaAttrsDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupMediaInlineDto extends JiraMarkupDto {
+  final JiraMarkupMediaInlineAttrsDto attrs;
+
+  const JiraMarkupMediaInlineDto({required this.attrs});
+
+  factory JiraMarkupMediaInlineDto.fromJson(Map<String, dynamic> map) =>
+      _$JiraMarkupMediaInlineDtoFromJson(map);
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupMediaInlineDtoToJson(this);
+}
+
+@_Serializable()
+class JiraMarkupMediaInlineAttrsDto {
   final String id;
   final String collection;
   final String type;
 
-  const JiraMarkupMediaInlineDto({
+  const JiraMarkupMediaInlineAttrsDto({
     required this.id,
     required this.collection,
     required this.type,
   });
 
-  factory JiraMarkupMediaInlineDto.fromJson(Map<String, dynamic> map) =>
-      _$JiraMarkupMediaInlineDtoFromJson(map.up('attrs'));
+  factory JiraMarkupMediaInlineAttrsDto.fromJson(Map<String, dynamic> map) =>
+      _$JiraMarkupMediaInlineAttrsDtoFromJson(map);
+  Map<String, dynamic> toJson() => _$JiraMarkupMediaInlineAttrsDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupMentionDto extends JiraMarkupDto {
   final String id;
   final String text;
@@ -169,9 +228,11 @@ class JiraMarkupMentionDto extends JiraMarkupDto {
 
   factory JiraMarkupMentionDto.fromJson(Map<String, dynamic> map) =>
       _$JiraMarkupMentionDtoFromJson(map.up('attrs'));
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupMentionDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupOrderedListDto extends JiraMarkupDto {
   final int order;
   final IList<JiraMarkupDto> content;
@@ -180,9 +241,11 @@ class JiraMarkupOrderedListDto extends JiraMarkupDto {
 
   factory JiraMarkupOrderedListDto.fromJson(Map<String, dynamic> map) =>
       _$JiraMarkupOrderedListDtoFromJson(map.up('attrs'));
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupOrderedListDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupBulletListDto extends JiraMarkupDto {
   final IList<JiraMarkupDto> content;
 
@@ -190,9 +253,11 @@ class JiraMarkupBulletListDto extends JiraMarkupDto {
 
   factory JiraMarkupBulletListDto.fromJson(Map<String, dynamic> map) =>
       _$JiraMarkupBulletListDtoFromJson(map);
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupBulletListDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupListItemDto extends JiraMarkupDto {
   final IList<JiraMarkupDto> content;
 
@@ -200,9 +265,11 @@ class JiraMarkupListItemDto extends JiraMarkupDto {
 
   factory JiraMarkupListItemDto.fromJson(Map<String, dynamic> map) =>
       _$JiraMarkupListItemDtoFromJson(map);
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupListItemDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupInlineCardDto extends JiraMarkupDto {
   final String url;
 
@@ -210,9 +277,11 @@ class JiraMarkupInlineCardDto extends JiraMarkupDto {
 
   factory JiraMarkupInlineCardDto.fromJson(Map<String, dynamic> map) =>
       _$JiraMarkupInlineCardDtoFromJson(map.up('attrs'));
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupInlineCardDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupCodeBlockDto extends JiraMarkupDto {
   final String? language;
   final IList<JiraMarkupDto> content;
@@ -221,9 +290,11 @@ class JiraMarkupCodeBlockDto extends JiraMarkupDto {
 
   factory JiraMarkupCodeBlockDto.fromJson(Map<String, dynamic> map) =>
       _$JiraMarkupCodeBlockDtoFromJson(map.up('attrs'));
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupCodeBlockDtoToJson(this);
 }
 
-@JiraSerializable(createFactory: true, disallowUnrecognizedKeys: _disallowUnrecognizedKeys)
+@_Serializable()
 class JiraMarkupHeadingDto extends JiraMarkupDto {
   final int level;
   final IList<JiraMarkupDto> content;
@@ -232,6 +303,8 @@ class JiraMarkupHeadingDto extends JiraMarkupDto {
 
   factory JiraMarkupHeadingDto.fromJson(Map<String, dynamic> map) =>
       _$JiraMarkupHeadingDtoFromJson(map.up('attrs'));
+  @override
+  Map<String, dynamic> toJson() => _$JiraMarkupHeadingDtoToJson(this);
 }
 
 extension on Map<String, dynamic> {
@@ -245,5 +318,14 @@ extension on Map<String, dynamic> {
   }
 }
 
-// Object? _readAttribute(Map<dynamic, dynamic> map, String key) =>
-//     (map['attrs'] as Map<String, dynamic>)[key];
+class _Serializable extends JiraSerializable {
+  const _Serializable()
+      : super(
+          createFactory: true,
+          createToJson: true,
+          disallowUnrecognizedKeys: true,
+        );
+}
+
+Object? _readAttribute(Map<dynamic, dynamic> map, String key) =>
+    (map['attrs'] as Map<String, dynamic>)[key];

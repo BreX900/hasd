@@ -150,6 +150,7 @@ class JiraApi {
     required WorkDuration newEstimate,
     required JiraWorkLogCreateDto data,
   }) async {
+    print(jsonEncode(data));
     await _httpClient.post<void>('/3/issue/$issueIdOrKey/worklog', data: data, queryParameters: {
       'adjustEstimate': 'new',
       'newEstimate': '${newEstimate.inMinutes}m',

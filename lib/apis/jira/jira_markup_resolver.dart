@@ -35,8 +35,8 @@ class JiraMarkdownBuilder {
   }
 
   String _resolveMedia(JiraMarkupMediaDto data) {
-    final attachment = attachments.singleWhere((e) => e.filename == data.alt);
-    return '![${data.alt}](${attachment.content})';
+    final attachment = attachments.singleWhere((e) => e.filename == data.attrs.alt);
+    return '![${data.attrs.alt}](${attachment.content})';
   }
 
   @override
