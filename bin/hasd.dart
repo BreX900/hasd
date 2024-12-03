@@ -12,6 +12,7 @@ import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
 // ignore: depend_on_referenced_packages
 import 'package:cli_util/cli_util.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:hasd/apis/youtrack/youtrack_api.dart';
 import 'package:hasd/apis/youtrack/youtrack_dto.dart';
 import 'package:hasd/dto/jira_config_dto.dart';
@@ -19,6 +20,7 @@ import 'package:hasd/dto/youtrack_config_dto.dart';
 import 'package:hasd/models/models.dart';
 import 'package:hasd/services/jira_service.dart';
 import 'package:hasd/services/service.dart';
+import 'package:hasd/services/youtrack_service.dart';
 import 'package:mekart/mekart.dart';
 // ignore: depend_on_referenced_packages
 import 'package:mekcli/mekcli.dart';
@@ -163,6 +165,8 @@ class _ConfigJiraCommand extends Command<void> {
   }
 }
 
+enum _Tracker { jira, youTrack }
+
 JiraService get _service => Service.instance as JiraService;
 YoutrackApi get _youtrackApi => YoutrackApi.instance!;
 
@@ -172,10 +176,21 @@ enum _FetchType { short, daily, monthly }
 //   final Iterable<WorkDuration>
 // }
 
+class DateTimeRange {
+  final DateTime startAt;
+  final DateTime endAt;
+
+  DateTimeRange(this.startAt, this.endAt);
+
+  bool contains(DateTime dateTime) => dateTime.isAfter(startAt) && dateTime.isBefore(endAt);
+}
+
 abstract class _CommandWithDependencies extends Command<void> {
   // late final ConfigDto config;
   late final YoutrackConfigDto youtrackConfig;
   late final JiraConfigDto jiraConfig;
+
+  YoutrackService get _youtrackService => YoutrackService(youtrackConfig);
 
   @mustCallSuper
   @override
@@ -197,7 +212,10 @@ abstract class _CommandWithDependencies extends Command<void> {
 
     for (var retryCount = 0; retryCount < 5; retryCount++) {
       final now = Date.timestamp();
-      final monthDate = now.copyWith(day: 1);
+      final monthRange = DateRange(
+        start: now.copyWith(day: 1),
+        end: now.copyWith(month: now.month + 1, day: 0),
+      );
       final yearDate = now.copyWith(day: 1).copySubtracting(months: 1);
 
       final youtrackProjectsWorkLogs = await _youtrackApi.fetchIssueWorkItems(startDate: yearDate);
@@ -207,69 +225,48 @@ abstract class _CommandWithDependencies extends Command<void> {
         return jiraConfig.youtrackIssueByProject.values
             .contains('$projectUid-${e.issue.numberInProject}');
       }).toList();
-      final youtrackTimes = youtrackWorkLogs.map((e) => e.duration);
       final youtrackAllTimeSpent = youtrackWorkLogs.fold(WorkDuration.zero, sumYoutrack);
 
       final jiraWorkLogs = await _service.fetchWorkLogs(spentFrom: yearDate);
-      final jiraTimes = jiraWorkLogs.map((e) => e.spentOn);
       final jiraAllTimeSpent = jiraWorkLogs.fold(WorkDuration.zero, sum);
 
-      // between()
-      //
-      // final youtrackMonthlyWorkLogs =
-      //     youtrackWorkLogs.where((e) => e.date.asDate() == monthDate).toList();
-      // final youtrackMonthlyTimeSpent = youtrackDailyWorkLogs.fold(WorkDuration.zero, sumYoutrack);
-      //
-      // final jiraMonthlyWorkLogs = jiraWorkLogs.where((e) => e.spentOn == monthDate).toList();
-      // final jiraMonthlyTimeSpent = jiraDailyWorkLogs.fold(WorkDuration.zero, sum);
+      final workLogs = <_Tracker, IList<WorkLogModel>>{
+        _Tracker.youTrack: await _youtrackService.fetchWorkLogs(spentFrom: yearDate),
+        _Tracker.jira: await _service.fetchWorkLogs(spentFrom: yearDate),
+      };
 
       switch (type) {
         case _FetchType.short:
-          final youtrackDailyWorkLogs =
-              youtrackWorkLogs.where((e) => e.date.asDate() == monthDate).toList();
-          final youtrackDailyTimeSpent = youtrackDailyWorkLogs.fold(WorkDuration.zero, sumYoutrack);
-
-          final jiraDailyWorkLogs = jiraWorkLogs.where((e) => e.spentOn == monthDate).toList();
-          final jiraDailyTimeSpent = jiraDailyWorkLogs.fold(WorkDuration.zero, sum);
-
           print(const Table(verticalDivisor: ' | ').render([
             ['Project', 'Monthly', 'Daily'],
-            [
-              'Youtrack',
-              '$youtrackAllTimeSpent (${youtrackWorkLogs.length})',
-              '$youtrackDailyTimeSpent (${youtrackDailyWorkLogs.length})'
-            ],
-            [
-              'Jira',
-              '$jiraAllTimeSpent (${jiraWorkLogs.length})',
-              '$jiraDailyTimeSpent (${jiraDailyWorkLogs.length})'
-            ],
+            ...workLogs.mapTo((tracker, workLogs) {
+              final dailyTimeSpent =
+                  workLogs.where((e) => e.spentOn == now).map((e) => e.timeSpent).sum;
+              final monthlyTimeSpent =
+                  workLogs.where((e) => monthRange.contains(e.spentOn)).map((e) => e.timeSpent).sum;
+
+              return [tracker.name, dailyTimeSpent, monthlyTimeSpent];
+            }),
           ]));
         case _FetchType.daily:
           final monthDates = [
-            for (var offset = monthDate;
+            for (var offset = monthRange.start;
                 offset.isBefore(now) || offset == now;
                 offset = offset.copyAdding(days: 1))
               if (offset.weekday != DateTime.saturday && offset.weekday != DateTime.sunday) offset
           ];
           print(const Table(verticalDivisor: ' | ').render([
             ['Project', for (final date in monthDates) date.day],
-            [
-              'Youtrack',
-              for (final date in monthDates)
-                youtrackWorkLogs.fold<WorkDuration>(WorkDuration.zero, (total, workLog) {
-                  if (workLog.date.asDate() != date) return total;
-                  return total + workLog.duration;
-                }).toString(short: true)
-            ],
-            [
-              'Jira',
-              for (final date in monthDates)
-                jiraWorkLogs.fold<WorkDuration>(WorkDuration.zero, (total, workLog) {
-                  if (workLog.spentOn != date) return total;
-                  return total + workLog.timeSpent;
-                }).toString(short: true)
-            ],
+            ...workLogs.mapTo((tracker, workLogs) {
+              return [
+                tracker.name,
+                for (final date in monthDates)
+                  workLogs.fold<WorkDuration>(WorkDuration.zero, (total, workLog) {
+                    if (workLog.spentOn != date) return total;
+                    return total + workLog.timeSpent;
+                  }).toString(short: true),
+              ];
+            }),
           ]));
           return;
         case _FetchType.monthly:
@@ -281,28 +278,18 @@ abstract class _CommandWithDependencies extends Command<void> {
           ];
           print(const Table(verticalDivisor: ' | ').render([
             [yearDate.year, for (final date in monthDates) date.month],
-            [
-              'Youtrack',
-              for (final date in monthDates)
-                youtrackWorkLogs.fold<WorkDuration>(WorkDuration.zero, (total, workLog) {
-                  final workLogDate = workLog.date.asDate();
-                  if (workLogDate.isBefore(date)) return total;
-                  if (workLogDate.isAfter(date.copyAdding(months: 1))) return total;
+            ...workLogs.mapTo((tracker, workLogs) {
+              return [
+                tracker.name,
+                for (final date in monthDates)
+                  workLogs.fold<WorkDuration>(WorkDuration.zero, (total, workLog) {
+                    if (workLog.spentOn.isBefore(date)) return total;
+                    if (workLog.spentOn.isAfter(date.copyAdding(months: 1))) return total;
 
-                  return total + workLog.duration;
-                }).toString(short: true)
-            ],
-            [
-              'Jira',
-              for (final date in monthDates)
-                jiraWorkLogs.fold<WorkDuration>(WorkDuration.zero, (total, workLog) {
-                  final workLogDate = workLog.spentOn;
-                  if (workLogDate.isBefore(date)) return total;
-                  if (workLogDate.isAfter(date.copyAdding(months: 1))) return total;
-
-                  return total + workLog.timeSpent;
-                }).toString(short: true)
-            ],
+                    return total + workLog.timeSpent;
+                  }).toString(short: true)
+              ];
+            }),
           ]));
           return;
       }
